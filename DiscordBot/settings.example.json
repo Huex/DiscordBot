@@ -1,0 +1,11 @@
+{
+  "DefaultPrefix": "h!",
+  "LogLevel": 5,
+  "DiscordSocketLogLevel": 5,
+  "Token": "",
+  "ConnectionTimeout": 30000,
+  "MessageCacheSize": 0,
+  "LargeThreshold": 250,
+  "AlwaysDownloadUsers": false,
+  "HandlerTimeout": 3000
+}

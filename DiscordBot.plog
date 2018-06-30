@@ -50,7 +50,7 @@
     </xs:element>
   </xs:schema>
   <Solution_Path>
-    <SolutionPath>C:\Code\_C#\VKDiscordBot\VKDiscordBot.sln</SolutionPath>
+    <SolutionPath>C:\Code\_C#\DiscordBot\DiscordBot.sln</SolutionPath>
     <SolutionVersion>15.0</SolutionVersion>
     <PlogVersion>4</PlogVersion>
     <ModificationDate>2017-09-03T21:25:29.810081Z</ModificationDate>
@@ -61,11 +61,11 @@
     <DefaultOrder>1</DefaultOrder>
     <ErrorCode>V3087</ErrorCode>
     <Message>Type of variable enumerated in 'foreach' is not guaranteed to be castable to the type of collection's elements.</Message>
-    <Project>VKDiscordBot</Project>
+    <Project>DiscordBot</Project>
     <ShortFile>NotifyService.cs</ShortFile>
     <Line>178</Line>
     <FalseAlarm>false</FalseAlarm>
-    <File>C:\Code\_C#\VKDiscordBot\VKDiscordBot\Services\Notify\NotifyService.cs</File>
+    <File>C:\Code\_C#\DiscordBot\DiscordBot\Services\Notify\NotifyService.cs</File>
     <CodePrev>76479</CodePrev>
     <CodeCurrent>347372834</CodeCurrent>
     <CodeNext>123</CodeNext>
@@ -81,11 +81,11 @@
     <DefaultOrder>2</DefaultOrder>
     <ErrorCode>V3087</ErrorCode>
     <Message>Type of variable enumerated in 'foreach' is not guaranteed to be castable to the type of collection's elements.</Message>
-    <Project>VKDiscordBot</Project>
+    <Project>DiscordBot</Project>
     <ShortFile>NotifyService.cs</ShortFile>
     <Line>222</Line>
     <FalseAlarm>false</FalseAlarm>
-    <File>C:\Code\_C#\VKDiscordBot\VKDiscordBot\Services\Notify\NotifyService.cs</File>
+    <File>C:\Code\_C#\DiscordBot\DiscordBot\Services\Notify\NotifyService.cs</File>
     <CodePrev>1318431</CodePrev>
     <CodeCurrent>348923546</CodeCurrent>
     <CodeNext>123</CodeNext>

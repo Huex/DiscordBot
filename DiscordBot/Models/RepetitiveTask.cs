@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace VKDiscordBot.Models
+namespace DiscordBot.Models
 {
     public class RepetitiveTask : IDisposable
     {

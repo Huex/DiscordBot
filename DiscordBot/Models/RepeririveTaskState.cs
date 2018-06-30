@@ -1,4 +1,4 @@
-﻿namespace VKDiscordBot.Models
+﻿namespace DiscordBot.Models
 {
     public enum RepeririveTaskState
     {
