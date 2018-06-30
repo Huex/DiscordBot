@@ -29,7 +29,7 @@ namespace DiscordBot
         };
 
         private static DiscordSocketClient _discord;
-        private static LocalBotConfig _botSettings;
+        private static BotConfig _botSettings;
 
         public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
 

@@ -21,12 +21,12 @@ namespace DiscordBot.Services
 
         internal static GuildConfig ReadGuildConfig(ulong guildId) => ReadGuildConfig(GetGuildPath(guildId));
 
-        internal static LocalBotConfig ReadBotConfig(string path)
+        internal static BotConfig ReadBotConfig(string path)
         {
-            return (LocalBotConfig)JsonConvert.DeserializeObject(File.ReadAllText(path, TextEncoding), typeof(LocalBotConfig));
+            return (BotConfig)JsonConvert.DeserializeObject(File.ReadAllText(path, TextEncoding), typeof(BotConfig));
         }
 
-        internal static void WriteBotConfig(string path, LocalBotConfig botSettings)
+        internal static void WriteBotConfig(string path, BotConfig botSettings)
         {
             File.WriteAllText(path, JsonConvert.SerializeObject(botSettings), TextEncoding);
         }
