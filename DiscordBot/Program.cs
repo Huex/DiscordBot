@@ -96,8 +96,8 @@ namespace DiscordBot
         {
             var botSettings = FileDataManager.ReadBotConfig("settings.json");
             var packet = new Packet();
-            packet.MessageReceived.Add(HandleMessage);
-            packet.GuildAvailable.Add(GuildAvailable);
+            packet.EventHandlers.MessageReceived = HandleMessage;
+            packet.EventHandlers.GuildAvailable = GuildAvailable;
             _bot = new Bot(botSettings, new Collection<Packet>
             {
                 packet

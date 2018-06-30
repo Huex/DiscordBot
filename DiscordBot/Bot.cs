@@ -39,141 +39,47 @@ namespace DiscordBot.Core
                 RaiseLog(new LogMessage(p));
                 return Task.CompletedTask;
             };
-            foreach(var packet in packets)
+            foreach (var packet in _packets)
             {
-                foreach(var handler in packet.ChannelCreated)
-                {
-                    Discord.ChannelCreated += handler;
-                }
-                foreach (var handler in packet.ChannelDestroyed)
-                {
-                    Discord.ChannelDestroyed += handler;
-                }
-                foreach (var handler in packet.ChannelUpdated)
-                {
-                    Discord.ChannelUpdated += handler;
-                }
-                foreach (var handler in packet.Connected)
-                {
-                    Discord.Connected += handler;
-                }
-                foreach (var handler in packet.CurrentUserUpdated)
-                {
-                    Discord.CurrentUserUpdated += handler;
-                }
-                foreach (var handler in packet.Disconnected)
-                {
-                    Discord.Disconnected += handler;
-                }
-                foreach (var handler in packet.GuildAvailable)
-                {
-                    Discord.GuildAvailable += handler;
-                }
-                foreach (var handler in packet.GuildMembersDownloaded)
-                {
-                    Discord.GuildMembersDownloaded += handler;
-                }
-                foreach (var handler in packet.GuildMemberUpdated)
-                {
-                    Discord.GuildMemberUpdated += handler;
-                }
-                foreach (var handler in packet.GuildUnavailable)
-                {
-                    Discord.GuildUnavailable += handler;
-                }
-                foreach (var handler in packet.GuildUpdated)
-                {
-                    Discord.GuildUpdated += handler;
-                }
-                foreach (var handler in packet.JoinedGuild)
-                {
-                    Discord.JoinedGuild += handler;
-                }
-                foreach (var handler in packet.LeftGuild)
-                {
-                    Discord.LeftGuild += handler;
-                }
-                foreach (var handler in packet.LoggedIn)
-                {
-                    Discord.LoggedIn += handler;
-                }
-                foreach (var handler in packet.LoggedOut)
-                {
-                    Discord.LoggedOut += handler;
-                }
-                foreach (var handler in packet.MessageUpdated)
-                {
-                    Discord.MessageUpdated += handler;
-                }
-                foreach (var handler in packet.MessageReceived)
-                {
-                    Discord.MessageReceived += handler;
-                }
-                foreach (var handler in packet.ReactionAdded)
-                {
-                    Discord.ReactionAdded += handler;
-                }
-                foreach (var handler in packet.ReactionRemoved)
-                {
-                    Discord.ReactionRemoved += handler;
-                }
-                foreach (var handler in packet.ReactionsCleared)
-                {
-                    Discord.ReactionsCleared += handler;
-                }
-                foreach (var handler in packet.Ready)
-                {
-                    Discord.Ready += handler;
-                }
-                foreach (var handler in packet.RecipientAdded)
-                {
-                    Discord.RecipientAdded += handler;
-                }
-                foreach (var handler in packet.RecipientRemoved)
-                {
-                    Discord.RecipientRemoved += handler;
-                }
-                foreach (var handler in packet.RoleCreated)
-                {
-                    Discord.RoleCreated += handler;
-                }
-                foreach (var handler in packet.RoleDeleted)
-                {
-                    Discord.RoleDeleted += handler;
-                }
-                foreach (var handler in packet.RoleUpdated)
-                {
-                    Discord.RoleUpdated += handler;
-                }
-                foreach (var handler in packet.UserBanned)
-                {
-                    Discord.UserBanned += handler;
-                }
-                foreach (var handler in packet.UserIsTyping)
-                {
-                    Discord.UserIsTyping += handler;
-                }
-                foreach (var handler in packet.UserJoined)
-                {
-                    Discord.UserJoined += handler;
-                }
-                foreach (var handler in packet.UserLeft)
-                {
-                    Discord.UserLeft += handler;
-                }
-                foreach (var handler in packet.UserUnbanned)
-                {
-                    Discord.UserUnbanned += handler;
-                }
-                foreach (var handler in packet.UserUpdated)
-                {
-                    Discord.UserUpdated += handler;
-                }
-                foreach (var handler in packet.UserVoiceStateUpdated)
-                {
-                    Discord.UserVoiceStateUpdated += handler;
-                }
+                SubscribeEventsHandlersByPacket(packet);
             }
+        }
+
+        private void SubscribeEventsHandlersByPacket(Packet packet)
+        {
+            Discord.ChannelCreated += packet.EventHandlers.ChannelCreated;
+            Discord.ChannelDestroyed += packet.EventHandlers.ChannelDestroyed;
+            Discord.ChannelUpdated += packet.EventHandlers.ChannelUpdated;
+            Discord.Connected += packet.EventHandlers.Connected;
+            Discord.CurrentUserUpdated += packet.EventHandlers.CurrentUserUpdated;
+            Discord.Disconnected += packet.EventHandlers.Disconnected;
+            Discord.GuildAvailable += packet.EventHandlers.GuildAvailable;
+            Discord.GuildMembersDownloaded += packet.EventHandlers.GuildMembersDownloaded;
+            Discord.GuildMemberUpdated += packet.EventHandlers.GuildMemberUpdated;
+            Discord.GuildUnavailable += packet.EventHandlers.GuildUnavailable;
+            Discord.GuildUpdated += packet.EventHandlers.GuildUpdated;
+            Discord.JoinedGuild += packet.EventHandlers.JoinedGuild;
+            Discord.LeftGuild += packet.EventHandlers.LeftGuild;
+            Discord.LoggedIn += packet.EventHandlers.LoggedIn;
+            Discord.LoggedOut += packet.EventHandlers.LoggedOut;
+            Discord.MessageUpdated += packet.EventHandlers.MessageUpdated;
+            Discord.MessageReceived += packet.EventHandlers.MessageReceived;
+            Discord.ReactionAdded += packet.EventHandlers.ReactionAdded;
+            Discord.ReactionRemoved += packet.EventHandlers.ReactionRemoved;
+            Discord.ReactionsCleared += packet.EventHandlers.ReactionsCleared;
+            Discord.Ready += packet.EventHandlers.Ready;
+            Discord.RecipientAdded += packet.EventHandlers.RecipientAdded;
+            Discord.RecipientRemoved += packet.EventHandlers.RecipientRemoved;
+            Discord.RoleCreated += packet.EventHandlers.RoleCreated;
+            Discord.RoleDeleted += packet.EventHandlers.RoleDeleted;
+            Discord.RoleUpdated += packet.EventHandlers.RoleUpdated;
+            Discord.UserBanned += packet.EventHandlers.UserBanned;
+            Discord.UserIsTyping += packet.EventHandlers.UserIsTyping;
+            Discord.UserJoined += packet.EventHandlers.UserJoined;
+            Discord.UserLeft += packet.EventHandlers.UserLeft;
+            Discord.UserUnbanned += packet.EventHandlers.UserUnbanned;
+            Discord.UserUpdated += packet.EventHandlers.UserUpdated;
+            Discord.UserVoiceStateUpdated += packet.EventHandlers.UserVoiceStateUpdated;
         }
     }
 }
