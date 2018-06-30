@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using DiscordBot.Modules;
 using DiscordBot.Services;
+using DiscordBot.Core;
 
 namespace DiscordBot
 {
@@ -17,7 +18,8 @@ namespace DiscordBot
     {
         private readonly List<GuildWorker> _guilds = new List<GuildWorker>();
         private readonly ServiceCollection _map = new ServiceCollection();
-
+        private Bot _bot;
+             
         private readonly Collection<Type> _modules = new Collection<Type>
         {
             typeof(SettingsModule)
@@ -27,9 +29,6 @@ namespace DiscordBot
         {
             typeof(SettingsModule)
         };
-
-        private static DiscordSocketClient _discord;
-        private static BotConfig _botSettings;
 
         public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -41,7 +40,7 @@ namespace DiscordBot
 
         private Task Log(LogMessage logMessage)
         {
-            if (_botSettings.LogLevel < logMessage.Severity)
+            if (_bot.Config.LogLevel < logMessage.Severity)
             {
                 return Task.CompletedTask;
             }
@@ -91,30 +90,23 @@ namespace DiscordBot
             return (string)needed?.ConstructorArguments[0].Value;
         }
 
+
+
         private async Task MainAsync()
         {
-            _botSettings = FileDataManager.ReadBotConfig("settings.json");
+            var botSettings = FileDataManager.ReadBotConfig("settings.json");
+            var packet = new Packet();
+            packet.MessageReceived.Add(HandleMessage);
+            packet.GuildAvailable.Add(GuildAvailable);
+            _bot = new Bot(botSettings, new Collection<Packet>
+            {
+                packet
+            });
+            _bot.Log += Log;
+            await _bot.LoginAsync();
+            await _bot.StartAsync();
 
-            InitDiscordSocket();
-            InitEventHandlers();
-
-            await _discord.LoginAsync(TokenType.Bot, _botSettings.Token);
-            await _discord.StartAsync();
             await Task.Delay(-1);
-        }
-
-        private void InitDiscordSocket()
-        {
-            _discord = new DiscordSocketClient(_botSettings.DiscordSocket);
-            _discord.Log += Log;
-        }
-
-        private void InitEventHandlers()
-        {
-            _discord.MessageReceived += HandleMessage;
-            _discord.GuildAvailable += GuildAvailable;
-            //_discord.GuildUpdated += GuildUpdated;
-            //_discord.Ready += ClientReady;
         }
 
         private Task HandleMessage(SocketMessage arg)
@@ -123,31 +115,22 @@ namespace DiscordBot
             {
                 return Task.CompletedTask;
             }
-            var guild = (new SocketCommandContext(_discord, msg)).Guild;
+            var guild = (new SocketCommandContext(_bot.Discord, msg)).Guild;
             if (guild != null)
             {
                 GuildWorker guildWorker = _guilds.Find(p => p.Config.Id == guild.Id);
                 guildWorker?.HandleMessage(arg).ConfigureAwait(false);
             }
+            else
+            {
+                msg.Channel.SendMessageAsync("чо?");
+            }
             return Task.CompletedTask;
         }
 
-        //public LocalBotConfig DefaultLocalBotSettings { get; } = new LocalBotConfig
-        //{
-        //    DefaultPrefix = "hx!",
-        //    LogLevel = LogSeverity.Debug,
-        //    DiscordSocketLogLevel = Discord.LogSeverity.Debug,
-        //    Token = "",
-        //    ConnectionTimeout = 300,
-        //    MessageCacheSize = 0,
-        //    LargeThreshold = 250,
-        //    AlwaysDownloadUsers = false,
-        //    HandlerTimeout = 3000
-        //};
-
         private Task GuildAvailable(SocketGuild guild)
         {
-            var guildWorker = new GuildWorker(_discord, _map, _modules, GetDefaultGuildConfig(guild));
+            var guildWorker = new GuildWorker(_bot.Discord, _map, _modules, GetDefaultGuildConfig(guild));
             guildWorker.Log += Log;
             guildWorker.SyncConfig();
             _guilds.Add(guildWorker);       
@@ -162,7 +145,7 @@ namespace DiscordBot
                 Name = guild.Name,
                 OwnerId = guild.Owner.Id,
                 Owner = guild.Owner.Username + "#" + guild.Owner.Discriminator,
-                Prefix = _botSettings.DefaultPrefix,
+                Prefix = _bot.Config.DefaultPrefix,
                 Modules = GetNamesOfModules(_defaultGuildModules)
             }.Build();
         }

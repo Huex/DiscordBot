@@ -1,30 +1,23 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
-using DiscordBot.Modules;
-using DiscordBot.Services;
 
 namespace DiscordBot
 {
     public class GuildWorker : BotServiceBase
     {
-        ///добавить запись о гуилд на диск здесь
-        public bool IsWork { get; private set; }
-
         public GuildConfig Config => _data.Config;
 
         private ServiceCollection _map;
 
-        private readonly Random _random = new Random();
         private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
         private readonly GuildDataManager _data;
@@ -54,10 +47,10 @@ namespace DiscordBot
         public void SyncConfig()
         {
             _data.SyncConfigWithLocalFile();
-            InitModulesByConfig();
+            UpdateModulesByConfig();
         }
 
-        public void InitModulesByConfig()
+        public void UpdateModulesByConfig()
         {
             foreach (var moduleType in _availableModules)
             {
@@ -106,18 +99,7 @@ namespace DiscordBot
             var result = await _commands.ExecuteAsync(context, prefixInt, _map.BuildServiceProvider());
             if (!result.IsSuccess)
             {
-                List<GuildEmote> emotes = new List<GuildEmote>(context.Guild.Emotes);
-                if (emotes.Count != 0)
-                {
-                    var emote = emotes[_random.Next(0, emotes.Count - 1)];
-                    await message.Channel.SendMessageAsync($"<:{emote.Name}:{emote.Id}>");
-                    await Task.Delay(500);
-                    await message.Channel.SendMessageAsync($"{message.Author.Mention} чо?");
-                }
-                else
-                {
-                    await message.AddReactionAsync(new Emoji("❔"));
-                }
+                await message.Channel.SendMessageAsync(result.ErrorReason);
             }
         }
     }
