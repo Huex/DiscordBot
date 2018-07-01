@@ -1,8 +1,9 @@
 ﻿using Discord.WebSocket;
+using System;
 
 namespace DiscordBot
 {
-    public struct BotConfig
+    public struct BotConfig : IEquatable<BotConfig>
     {
         public string DefaultPrefix { get; set; } 
         public LogSeverity LogLevel { get; set; }
@@ -28,6 +29,19 @@ namespace DiscordBot
                     LogLevel = DiscordSocketLogLevel
                 };
             }
+        }
+
+        public bool Equals(BotConfig other)
+        {
+            return (DefaultPrefix == other.DefaultPrefix &&
+                LogLevel == other.LogLevel &&
+                DiscordSocketLogLevel == other.DiscordSocketLogLevel &&
+                Token == other.Token &&
+                ConnectionTimeout == other.ConnectionTimeout &&
+                MessageCacheSize == other.MessageCacheSize &&
+                LargeThreshold == other.LargeThreshold &&
+                AlwaysDownloadUsers == other.AlwaysDownloadUsers &&
+                HandlerTimeout == other.HandlerTimeout);
         }
     }
 }

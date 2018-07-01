@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace DiscordBot
 {
-    public struct GuildConfig
+    public struct GuildConfig : IEquatable<GuildConfig>
     {
         public GuildConfig(string name, ulong id, string prefix, ulong ownerId, string owner, Collection<string> modules)
         {
@@ -29,6 +30,16 @@ namespace DiscordBot
             {
                 return _modules;
             }
+        }
+
+        public bool Equals(GuildConfig other)
+        {
+            return (Name == other.Name &&
+                Id == other.Id &&
+                Prefix == other.Prefix &&
+                OwnerId == other.OwnerId &&
+                Owner == other.Owner &&
+                Modules == other.Modules);
         }
     }
 }

@@ -60,7 +60,7 @@ namespace DiscordBot.Core
                     }
                 }               
             }
-            var guildWorker = new CommandHandler(_bot._discord, _map, modules, DefaultPrefix, guild.Id);
+            var guildWorker = new CommandHandler(_bot.Discord, _map, modules, DefaultPrefix, guild.Id);
             guildWorker.Log += (p) =>
             {
                 RaiseLog(p);
@@ -92,15 +92,7 @@ namespace DiscordBot.Core
 
         private GuildConfig GetDefaultGuildConfig(SocketGuild guild)
         {
-            return new GuildConfigBuilder
-            {
-                Id = guild.Id,
-                Name = guild.Name,
-                OwnerId = guild.Owner.Id,
-                Owner = guild.Owner.Username + "#" + guild.Owner.Discriminator,
-                Prefix = DefaultPrefix,
-                Modules = GetNamesOfModules(_defaultGuildModules)
-            }.Build();
+            return new GuildConfig(guild.Name,guild.Id, DefaultPrefix, guild.Owner.Id, $"{guild.Owner.Username}#{guild.Owner.Discriminator}", GetNamesOfModules(_defaultGuildModules));
         }
 
         private Task HandleMessage(SocketMessage arg)
@@ -109,7 +101,7 @@ namespace DiscordBot.Core
             {
                 return Task.CompletedTask;
             }
-            var guild = (new SocketCommandContext(_bot._discord, msg)).Guild;
+            var guild = (new SocketCommandContext(_bot.Discord, msg)).Guild;
             if (guild != null)
             {
                 CommandHandler guildWorker = _guilds.Find(p => p.GuildId == guild.Id);
