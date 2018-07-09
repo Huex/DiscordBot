@@ -12,7 +12,7 @@ namespace DiscordBot.Core
     public class DiscordBot : LogEntity
     {
         private readonly List<Packet> _packets;
-        private readonly List<CommandHandler> _commandHandlers = new List<CommandHandler>();
+        private readonly Dictionary<ulong, CommandHandler> _commandHandlers = new Dictionary<ulong, CommandHandler>();
         private readonly ServiceCollection _guildServices = new ServiceCollection();
         private readonly ServiceCollection _dmServices = new ServiceCollection();
         private readonly Collection<Type> _guildModules = new Collection<Type>();
@@ -92,10 +92,9 @@ namespace DiscordBot.Core
 
         private void RemoveCommandHandler(ulong id)
         {
-            var handler = _commandHandlers.Find(g => g.Id == id);
-            if (handler != null)
+            if (_commandHandlers.ContainsKey(id))
             {
-                _commandHandlers.Remove(handler);
+                _commandHandlers.Remove(id);
             }
         }
 
@@ -107,11 +106,11 @@ namespace DiscordBot.Core
 
         private void AddCommandHandler(ulong id)
         {
-            if (!_commandHandlers.Exists(h => h.Id == id))
+            if (!_commandHandlers.ContainsKey(id))
             {
                 CommandHandler handler = new CommandHandler(Discord, _guildServices, _guildModules, Config.DefaultPrefix, id);
                 handler.Log += RaiseLogAsync;
-                _commandHandlers.Add(handler);
+                _commandHandlers.Add(id, handler);
                 RaiseLog(LogSeverity.Debug, $"Command handler added, id user/guild = {id}");
             }
         }
@@ -143,13 +142,11 @@ namespace DiscordBot.Core
                 var context = new SocketCommandContext(Discord, msg);
                 if (context.Guild != null)
                 {
-                    var handler = _commandHandlers.Find(p => p.Id == context.Guild.Id);
-                    handler?.HandleMessage(arg).ConfigureAwait(false);
+                    _commandHandlers.GetValueOrDefault(context.Guild.Id, null)?.HandleMessage(arg).ConfigureAwait(false);
                 }
                 else
                 {
-                    var handler = _commandHandlers.Find(p => p.Id == context.User.Id);
-                    handler?.HandleMessage(arg).ConfigureAwait(false);
+                    _commandHandlers.GetValueOrDefault(context.User.Id, null)?.HandleMessage(arg).ConfigureAwait(false);
                 }
             }
             return Task.CompletedTask;
