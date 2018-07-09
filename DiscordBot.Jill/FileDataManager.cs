@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DiscordBot.Jill
 {
-    public static class FileDataManager
+    public class FileDataManager
     {
         public static readonly Encoding TextEncoding = Encoding.UTF8;
         public static readonly string FILE_TYPE = "json";
@@ -12,9 +12,9 @@ namespace DiscordBot.Jill
 
         private static string GetGuildPath(ulong guildId) => GUILDS_PATH + guildId + "." + FILE_TYPE;
 
-        internal static void WriteGuildConfig(GuildConfig guildConfig) => WriteGuildConfig(GetGuildPath(guildConfig.Id), guildConfig);
+        internal static void WriteGuildConfig(CommandConfig guildConfig) => WriteGuildConfig(GetGuildPath(guildConfig.Id), guildConfig);
 
-        internal static GuildConfig ReadGuildConfig(ulong guildId) => ReadGuildConfig(GetGuildPath(guildId));
+        internal static CommandConfig ReadGuildConfig(ulong guildId) => ReadGuildConfig(GetGuildPath(guildId));
 
         internal static BotConfig ReadBotConfig(string path)
         {
@@ -26,14 +26,14 @@ namespace DiscordBot.Jill
             File.WriteAllText(path, JsonConvert.SerializeObject(botSettings), TextEncoding);
         }
 
-        internal static void WriteGuildConfig(string path, GuildConfig guildConfig)
+        internal static void WriteGuildConfig(string path, CommandConfig guildConfig)
         {
             File.WriteAllText(path, JsonConvert.SerializeObject(guildConfig), TextEncoding);
         }
 
-        internal static GuildConfig ReadGuildConfig(string path)
+        internal static CommandConfig ReadGuildConfig(string path)
         {
-            return ((GuildConfigBuilder)JsonConvert.DeserializeObject(File.ReadAllText(path, TextEncoding), typeof(GuildConfigBuilder))).Build();
+            return ((CommandConfigBuilder)JsonConvert.DeserializeObject(File.ReadAllText(path, TextEncoding), typeof(CommandConfigBuilder))).Build();
         }
 
 
