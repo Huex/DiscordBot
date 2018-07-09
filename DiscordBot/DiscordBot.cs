@@ -12,7 +12,6 @@ namespace DiscordBot.Core
     public class DiscordBot : LogEntity
     {
         private readonly List<Packet> _packets;
-
         private readonly List<CommandHandler> _commandHandlers = new List<CommandHandler>();
         private readonly ServiceCollection _guildServices = new ServiceCollection();
         private readonly ServiceCollection _dmServices = new ServiceCollection();
@@ -29,69 +28,134 @@ namespace DiscordBot.Core
             Discord = new DiscordSocketClient(Config.DiscordSocket);
             Discord.Log += RaiseLogAsync;
             _packets = new List<Packet>(packets);
+            InitPackets();
+            InitCommandsHandler();
+        }
+
+        private void InitPackets()
+        {
             foreach (var packet in _packets)
             {
                 packet.Log += RaiseLogAsync;
                 packet.Discord = Discord;
                 SubscribeEventsHandlersByPacket(packet);
             }
-
-            InitCommandsHandler();
         }
 
         private void InitCommandsHandler()
         {
-            Discord.GuildAvailable += GuildAvailable;
+            Discord.GuildAvailable += AddCommandHandler;
+            Discord.Ready += AddDMCommandHandlersAsync;
+            Discord.JoinedGuild += AddCommandHandler;
+            Discord.GuildUnavailable += RemoveCommandHandler;
             Discord.MessageReceived += HandleMessage;
+            Discord.ChannelCreated += AddDMCommandHandler;
+            Discord.ChannelDestroyed += RemoveDMCommandHandler;
             foreach (var packet in _packets)
             {
-                foreach (var service in packet.GuildCommands.Services)
-                {
-                    _guildServices.AddSingleton(service);
-                }
-                foreach (var module in packet.GuildCommands.Modules)
-                {
-                    _guildModules.Add(module);
-                }
-                foreach (var service in packet.DMCommands.Services)
-                {
-                    _dmServices.AddSingleton(service);
-                }
-                foreach (var module in packet.DMCommands.Modules)
-                {
-                    _guildModules.Add(module);
-                }
+                ExtractCommandsData(packet);
             }
         }
 
-        private Task GuildAvailable(SocketGuild guild)
+        private async Task AddDMCommandHandlersAsync()
         {
-            CommandHandler handler = new CommandHandler(Discord, _guildServices, _guildModules, Config.DefaultPrefix, guild.Id);
-            handler.Log += RaiseLogAsync;
-            _commandHandlers.Add(handler);
+            var channels = await Discord.GetDMChannelsAsync();
+            foreach(var channel in channels)
+            {
+                AddCommandHandler(channel.Id);
+            }
+        }
+
+        private Task RemoveDMCommandHandler(SocketChannel arg)
+        {
+            if (arg is IDMChannel channel)
+            {
+                RemoveCommandHandler(channel.Recipient.Id);
+            }
             return Task.CompletedTask;
+        }
+
+        private Task AddDMCommandHandler(SocketChannel arg)
+        {
+            if (arg is IDMChannel channel)
+            {
+                AddCommandHandler(channel.Recipient.Id);
+            }       
+            return Task.CompletedTask;
+        }
+
+        private Task RemoveCommandHandler(SocketGuild arg)
+        {
+            RemoveCommandHandler(arg.Id);
+            return Task.CompletedTask;
+        }
+
+        private void RemoveCommandHandler(ulong id)
+        {
+            var handler = _commandHandlers.Find(g => g.Id == id);
+            if (handler != null)
+            {
+                _commandHandlers.Remove(handler);
+            }
+        }
+
+        private Task AddCommandHandler(SocketGuild guild)
+        {
+            AddCommandHandler(guild.Id);
+            return Task.CompletedTask;
+        }
+
+        private void AddCommandHandler(ulong id)
+        {
+            if (!_commandHandlers.Exists(h => h.Id == id))
+            {
+                CommandHandler handler = new CommandHandler(Discord, _guildServices, _guildModules, Config.DefaultPrefix, id);
+                handler.Log += RaiseLogAsync;
+                _commandHandlers.Add(handler);
+                RaiseLog(LogSeverity.Debug, $"Command handler added, id user/guild = {id}");
+            }
+        }
+
+        private void ExtractCommandsData(Packet packet)
+        {
+            foreach (var service in packet.GuildCommands.Services)
+            {
+                _guildServices.AddSingleton(service);
+            }
+            foreach (var module in packet.GuildCommands.Modules)
+            {
+                _guildModules.Add(module);
+            }
+            foreach (var service in packet.DMCommands.Services)
+            {
+                _dmServices.AddSingleton(service);
+            }
+            foreach (var module in packet.DMCommands.Modules)
+            {
+                _guildModules.Add(module);
+            }
         }
 
         private Task HandleMessage(SocketMessage arg)
         {
-            if (!(arg is SocketUserMessage msg) || msg.Source != MessageSource.User)
+            if (arg is SocketUserMessage msg)
             {
-                return Task.CompletedTask;
-            }
-            var guild = (new SocketCommandContext(Discord, msg)).Guild;
-            if (guild != null)
-            {
-                CommandHandler guildWorker = _commandHandlers.Find(p => p.Id == guild.Id);
-                guildWorker?.HandleMessage(arg).ConfigureAwait(false);
-            }
-            else
-            {
-                msg.Channel.SendMessageAsync("чо?");
+                var context = new SocketCommandContext(Discord, msg);
+                if (context.Guild != null)
+                {
+                    var handler = _commandHandlers.Find(p => p.Id == context.Guild.Id);
+                    handler?.HandleMessage(arg).ConfigureAwait(false);
+                }
+                else
+                {
+                    var handler = _commandHandlers.Find(p => p.Id == context.User.Id);
+                    handler?.HandleMessage(arg).ConfigureAwait(false);
+                }
             }
             return Task.CompletedTask;
         }
 
-        
+
 
         //private readonly Collection<Type> _avalaibleModules = new Collection<Type>
         //{
