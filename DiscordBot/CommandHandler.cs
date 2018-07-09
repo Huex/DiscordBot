@@ -9,29 +9,20 @@ namespace DiscordBot.Core
 {
     public class CommandHandler : LogEntity
     {
-        private readonly CommandService _commands = new CommandService();
-        private ServiceCollection _map;
         private readonly DiscordSocketClient _discord;
 
+        public IServiceProvider Services { get; set; }
+        public CommandService Commands { get; set; }
         public string Prefix { get; set; }
-        public ulong Id { get; set; }
+        public ulong Id { get; }
 
-        public CommandHandler(DiscordSocketClient discord, ServiceCollection map, Collection<Type> modules, string prefix, ulong id)
+        public CommandHandler(DiscordSocketClient discord, IServiceProvider services, CommandService commands, string prefix, ulong id)
         {
             _discord = discord;
-            _commands.Log += (p) =>
-            {
-                RaiseLog(new LogMessage(p));
-                return Task.CompletedTask;
-            };
-            _map = map;
+            Commands.Log += RaiseLogAsync;
+            Services = services;
             Prefix = prefix;
             Id = id;
-            foreach (var module in modules)
-            {
-                _commands.AddModuleAsync(module);
-            }
-            _map.AddSingleton(_commands);
         }
 
         public async Task HandleMessage(SocketMessage message)
@@ -41,24 +32,21 @@ namespace DiscordBot.Core
 
         private async Task HandleCommand(SocketUserMessage msg)
         {
-            if (msg == null)
+            if (msg != null)
             {
-                return;
-            }
-
-            int prefixInt = Prefix.Length - 1;
-            if (msg.HasStringPrefix(Prefix, ref prefixInt) || msg.HasMentionPrefix(_discord.CurrentUser, ref prefixInt))
-            {
-                await ProcessCommandAsync(prefixInt, msg);
+                int prefixInt = Prefix.Length - 1;
+                if (msg.HasStringPrefix(Prefix, ref prefixInt) || msg.HasMentionPrefix(_discord.CurrentUser, ref prefixInt))
+                {
+                    await ProcessCommandAsync(prefixInt, msg);
+                }
             }
         }
 
         private async Task ProcessCommandAsync(int prefixInt, SocketUserMessage message)
         {
             var context = new SocketCommandContext(_discord, message);
-
             await message.Channel.TriggerTypingAsync();
-            var result = await _commands.ExecuteAsync(context, prefixInt, _map.BuildServiceProvider());
+            var result = await Commands.ExecuteAsync(context, prefixInt, Services);
             if (!result.IsSuccess)
             {
                 await message.Channel.SendMessageAsync(result.ErrorReason);

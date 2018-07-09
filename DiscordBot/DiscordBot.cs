@@ -15,16 +15,19 @@ namespace DiscordBot.Core
         private readonly Dictionary<ulong, CommandHandler> _commandHandlers = new Dictionary<ulong, CommandHandler>();
         private readonly ServiceCollection _guildServices = new ServiceCollection();
         private readonly ServiceCollection _dmServices = new ServiceCollection();
-        private readonly Collection<Type> _guildModules = new Collection<Type>();
-        private readonly Collection<Type> _dmModules = new Collection<Type>();
+        private readonly CommandService _guildModules = new CommandService();
+        private readonly CommandService _dmModules = new CommandService();
+        private readonly IDataProvider _data;
+        private readonly Dictionary<ulong, CommandConfig> _commandConfigs;
 
         public BotConfig Config { get; }
         public DiscordSocketClient Discord { get; }
 
-        public DiscordBot(BotConfig config, ICollection<Packet> packets)
+        public DiscordBot(BotConfig config, IDataProvider data, ICollection<Packet> packets)
         {
             config.Token = "";
             Config = config;
+            _data = data;
             Discord = new DiscordSocketClient(Config.DiscordSocket);
             Discord.Log += RaiseLogAsync;
             _packets = new List<Packet>(packets);
@@ -62,7 +65,7 @@ namespace DiscordBot.Core
             var channels = await Discord.GetDMChannelsAsync();
             foreach(var channel in channels)
             {
-                AddCommandHandler(channel.Id);
+                AddCommandHandler(CommandSource.User, channel.Id);
             }
         }
 
@@ -79,7 +82,7 @@ namespace DiscordBot.Core
         {
             if (arg is IDMChannel channel)
             {
-                AddCommandHandler(channel.Recipient.Id);
+                AddCommandHandler(CommandSource.User, channel.Recipient.Id);
             }       
             return Task.CompletedTask;
         }
@@ -100,19 +103,33 @@ namespace DiscordBot.Core
 
         private Task AddCommandHandler(SocketGuild guild)
         {
-            AddCommandHandler(guild.Id);
+            AddCommandHandler(CommandSource.Guild, guild.Id);
             return Task.CompletedTask;
         }
 
-        private void AddCommandHandler(ulong id)
+        private void AddCommandHandler(CommandSource source, ulong id)
         {
             if (!_commandHandlers.ContainsKey(id))
             {
-                CommandHandler handler = new CommandHandler(Discord, _guildServices, _guildModules, Config.DefaultPrefix, id);
-                handler.Log += RaiseLogAsync;
-                _commandHandlers.Add(id, handler);
-                RaiseLog(LogSeverity.Debug, $"Command handler added, id user/guild = {id}");
+                switch (source)
+                {
+                    case CommandSource.User:
+                        AddCommandHandler(new CommandHandler(Discord, _dmServices.BuildServiceProvider(), _dmModules, Config.DefaultPrefix, id));
+                        break;
+                    case CommandSource.Guild:
+                        AddCommandHandler(new CommandHandler(Discord, _guildServices.BuildServiceProvider(), _guildModules, Config.DefaultPrefix, id));
+                        break;
+                    default:
+                        break;
+                }
             }
+        }
+
+        private void AddCommandHandler(CommandHandler handler)
+        {
+            handler.Log += RaiseLogAsync;
+            _commandHandlers.Add(handler.Id, handler);
+            RaiseLog(LogSeverity.Debug, $"Command handler added, id user/guild = {handler.Id}");
         }
 
         private void ExtractCommandsData(Packet packet)
@@ -123,7 +140,7 @@ namespace DiscordBot.Core
             }
             foreach (var module in packet.GuildCommands.Modules)
             {
-                _guildModules.Add(module);
+                _guildModules.AddModuleAsync(module);
             }
             foreach (var service in packet.DMCommands.Services)
             {
@@ -131,7 +148,7 @@ namespace DiscordBot.Core
             }
             foreach (var module in packet.DMCommands.Modules)
             {
-                _guildModules.Add(module);
+                _guildModules.AddModuleAsync(module);
             }
         }
 
