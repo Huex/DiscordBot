@@ -1,28 +1,22 @@
-﻿using Discord;
-using Discord.Commands;
+﻿using Discord.Commands;
 using Discord.WebSocket;
-using DiscordBot.Core;
-using DiscordBot.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
-namespace DiscordBot
+namespace DiscordBot.Core
 {
-    public class CommandHandler : BotServiceBase
+    public class CommandHandler : LogEntity
     {
         private readonly CommandService _commands = new CommandService();
         private ServiceCollection _map;
         private readonly DiscordSocketClient _discord;
 
         public string Prefix { get; set; }
-        public ulong? GuildId { get; set; }
+        public ulong Id { get; set; }
 
-        public CommandHandler(DiscordSocketClient discord, ServiceCollection map, Collection<Type> modules, string prefix, ulong? guildId = null)
+        public CommandHandler(DiscordSocketClient discord, ServiceCollection map, Collection<Type> modules, string prefix, ulong id)
         {
             _discord = discord;
             _commands.Log += (p) =>
@@ -32,7 +26,7 @@ namespace DiscordBot
             };
             _map = map;
             Prefix = prefix;
-            GuildId = guildId;
+            Id = id;
             foreach (var module in modules)
             {
                 _commands.AddModuleAsync(module);
@@ -68,6 +62,10 @@ namespace DiscordBot
             if (!result.IsSuccess)
             {
                 await message.Channel.SendMessageAsync(result.ErrorReason);
+            }
+            else
+            {
+                RaiseLog(LogSeverity.Critical, "БЛЯ");
             }
         }
     }

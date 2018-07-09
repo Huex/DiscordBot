@@ -1,11 +1,8 @@
-﻿using System.Diagnostics;
-using System.Threading;
+﻿using Discord.Commands;
+using System.Diagnostics;
 using System.Threading.Tasks;
-using Discord;
-using Discord.Commands;
-using DiscordBot.Services;
 
-namespace DiscordBot.Modules
+namespace DiscordBot.Packets.Settings
 {
     [Name("Settings")]
     public class SettingsModule : ModuleBase

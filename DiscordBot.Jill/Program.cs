@@ -1,31 +1,16 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
+﻿using DiscordBot.Core;
+using DiscordBot.Packets.Settings;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
-using DiscordBot.Modules;
-using DiscordBot.Services;
-using DiscordBot.Core;
-using DiscordBot.Core.Packets.Settings;
 
-namespace DiscordBot
+namespace DiscordBot.Jill
 {
     public class Program
     {
-        private Bot _bot;
+        private Core.DiscordBot _bot;
 
         public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
-
-        private Task Log(Discord.LogMessage logMessage)
-        {
-            Log(new LogMessage(logMessage));
-            return Task.CompletedTask;
-        }
 
         private Task Log(LogMessage logMessage)
         {
@@ -62,12 +47,15 @@ namespace DiscordBot
         private async Task MainAsync()
         {
             var botSettings = FileDataManager.ReadBotConfig("settings.json");
-            _bot = new Bot(botSettings);
-            _bot.AddPacket(new CommandHandlerPacket(_bot));
-            _bot.AddPacket(new SettingsPacket());           
+
+            _bot = new Core.DiscordBot(botSettings, new Collection<Packet>
+            {
+                new SettingsPacket()
+            });
+
             _bot.Log += Log;
-            await _bot.LoginAsync();
-            await _bot.StartAsync();
+            await _bot.Discord.LoginAsync(Discord.TokenType.Bot, botSettings.Token);
+            await _bot.Discord.StartAsync();
 
             await Task.Delay(-1);
         }

@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using Newtonsoft.Json;
 using System.IO;
 using System.Text;
-using Discord;
-using Newtonsoft.Json;
 
-namespace DiscordBot.Services
+namespace DiscordBot.Jill
 {
-    internal static class FileDataManager
+    public static class FileDataManager
     {
         public static readonly Encoding TextEncoding = Encoding.UTF8;
         public static readonly string FILE_TYPE = "json";

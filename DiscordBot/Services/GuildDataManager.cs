@@ -1,61 +1,61 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using DiscordBot.Core;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
-using DiscordBot.Services;
 
-namespace DiscordBot
+namespace DiscordBot.Services
 {
-    public class GuildDataManager : BotServiceBase
+    public class GuildDataManager : ServiceBase
     {
-        public readonly Encoding TextEncoding = Encoding.UTF8;
+        //public readonly Encoding TextEncoding = Encoding.UTF8;
 
-        public GuildConfig Config { get; private set; }
+        //public GuildConfig Config { get; private set; }
 
-        public GuildDataManager(GuildConfig config)
-        {
-            Config = config;
-        }
+        //public GuildDataManager(GuildConfig config)
+        //{
+        //    Config = config;
+        //}
 
-        public void SyncConfigWithLocalFile()
-        {
-            GuildConfig localGuildConfig;
-            try
-            {
-                RaiseLog(LogSeverity.Debug, "Read guild config from file");
-                localGuildConfig = FileDataManager.ReadGuildConfig(Config.Id);
-            }
-            catch (FileNotFoundException ex)
-            {
-                RaiseLog(LogSeverity.Verbose, null, ex);
-                RaiseLog(LogSeverity.Verbose, "Write default guild config to file");
-                FileDataManager.WriteGuildConfig(Config);
-                return;
-            }
+        //public void SyncConfigWithLocalFile()
+        //{
+        //    GuildConfig localGuildConfig;
+        //    try
+        //    {
+        //        RaiseLog(LogSeverity.Debug, "Read guild config from file");
+        //        localGuildConfig = FileDataManager.ReadGuildConfig(Config.Id);
+        //    }
+        //    catch (FileNotFoundException ex)
+        //    {
+        //        RaiseLog(LogSeverity.Verbose, null, ex);
+        //        RaiseLog(LogSeverity.Verbose, "Write default guild config to file");
+        //        FileDataManager.WriteGuildConfig(Config);
+        //        return;
+        //    }
 
-            GuildConfigBuilder guildConfigBuilder = new GuildConfigBuilder(Config)
-            {
-                Modules = new Collection<string>(new List<string>(localGuildConfig.Modules)),
-                Prefix = localGuildConfig.Prefix
-            };
+        //    GuildConfigBuilder guildConfigBuilder = new GuildConfigBuilder(Config)
+        //    {
+        //        Modules = new Collection<string>(new List<string>(localGuildConfig.Modules)),
+        //        Prefix = localGuildConfig.Prefix
+        //    };
 
-            Config = guildConfigBuilder.Build();
-            RaiseLog(LogSeverity.Debug, "Write guild config to file");
-            FileDataManager.WriteGuildConfig(Config);
-            RaiseLog(LogSeverity.Info, $"Guild config synced with file ({Config.Name})");
-        }
+        //    Config = guildConfigBuilder.Build();
+        //    RaiseLog(LogSeverity.Debug, "Write guild config to file");
+        //    FileDataManager.WriteGuildConfig(Config);
+        //    RaiseLog(LogSeverity.Info, $"Guild config synced with file ({Config.Name})");
+        //}
 
-        internal void SetGuildPrefix(string prefix)
-        {
-            SyncConfigWithLocalFile(); ////!!!!!!!!АЛЯРМ
-            GuildConfigBuilder config = new GuildConfigBuilder(Config);
-            config.Prefix = prefix;
-            Config = config.Build();
-            RaiseLog(LogSeverity.Debug, "Write guild config to file");
-            FileDataManager.WriteGuildConfig(Config); /////!!!!!!!!!АЛЯРМ
-        }
+        //internal void SetGuildPrefix(string prefix)
+        //{
+        //    SyncConfigWithLocalFile(); ////!!!!!!!!АЛЯРМ
+        //    GuildConfigBuilder config = new GuildConfigBuilder(Config)
+        //    {
+        //        Prefix = prefix
+        //    };
+        //    Config = config.Build();
+        //    RaiseLog(LogSeverity.Debug, "Write guild config to file");
+        //    FileDataManager.WriteGuildConfig(Config); /////!!!!!!!!!АЛЯРМ
+        //}
 
         //private void WriteGuildConfig(string path, GuildConfig guildConfig)
         //{
