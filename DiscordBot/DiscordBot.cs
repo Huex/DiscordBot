@@ -132,7 +132,10 @@ namespace DiscordBot.Core
         {
             if (arg is IDMChannel channel)
             {
-                AddCommandHandler(CommandSource.User, arg);
+                if (!_commandHandlers.ContainsKey(channel.Recipient.Id))
+                {
+                    AddCommandHandler(CommandSource.User, arg);
+                }              
             }       
             return Task.CompletedTask;
         }
@@ -177,7 +180,7 @@ namespace DiscordBot.Core
 
         private void AddCommandHandler(SocketGuild socketGuild, ServiceCollection guildServices, CommandService guildModules)
         {
-            var config = InitCommandConfigs.ContainsKey(socketGuild.Id) ? InitCommandConfigs[socketGuild.Id] : Config.DefaultUserCommandConfig;
+            var config = InitCommandConfigs.ContainsKey(socketGuild.Id) ? InitCommandConfigs[socketGuild.Id] : Config.DefaultUserCommandConfig.Build();
             var builder = new CommandConfigBuilder(config)
             {
                 Id = socketGuild.Id,
@@ -189,11 +192,11 @@ namespace DiscordBot.Core
 
         private void AddCommandHandler(IDMChannel channel, ServiceCollection dmServices, CommandService dmModules)
         {
-            var config = InitCommandConfigs.ContainsKey(channel.Id) ? InitCommandConfigs[channel.Id] : Config.DefaultUserCommandConfig;
+            var config = InitCommandConfigs.ContainsKey(channel.Recipient.Id) ? InitCommandConfigs[channel.Recipient.Id] : Config.DefaultUserCommandConfig.Build();
             var builder = new CommandConfigBuilder(config)
             {
-                Id = channel.Id,
-                Name = channel.Recipient.Mention,
+                Id = channel.Recipient.Id,
+                Name = channel.Recipient.Username,
                 Source = CommandSource.User
             };
             AddCommandHandler(builder.Build(), dmServices, dmModules);
@@ -229,7 +232,7 @@ namespace DiscordBot.Core
             }
             foreach (var module in packet.DMCommands.Modules)
             {
-                _guildModules.AddModuleAsync(module);
+                _dmModules.AddModuleAsync(module);
             }
         }
 

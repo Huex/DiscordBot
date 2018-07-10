@@ -31,9 +31,10 @@ namespace DiscordBot.Core
 
         public CommandHandler(DiscordSocketClient discord, IServiceProvider services, CommandService commands, CommandConfig config)
         {
-            _discord = discord;
+            _discord = discord ?? throw new ArgumentNullException(nameof(discord));
+            Commands = commands ?? throw new ArgumentNullException(nameof(commands));
+            Services = services ?? throw new ArgumentNullException(nameof(services));
             Commands.Log += RaiseLogAsync;
-            Services = services;
             Config = config;
         }
 
@@ -62,9 +63,13 @@ namespace DiscordBot.Core
             if (!result.IsSuccess)
             {
                 await message.Channel.SendMessageAsync(result.ErrorReason);
+                await Task.Delay(500);
+                await message.AddReactionAsync(new Discord.Emoji("⁉"));
+                
             }
             else
             {
+                await Task.Delay(500);
                 await message.AddReactionAsync(new Discord.Emoji("✅"));
             }
         }
