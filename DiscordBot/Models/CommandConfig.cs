@@ -26,10 +26,48 @@ namespace DiscordBot
 
         public bool Equals(CommandConfig other)
         {
-            return (Name == other.Name &&
-                Id == other.Id &&
-                Prefix == other.Prefix &&
-                Modules == other.Modules);
+            return Equals(this, other);
+        }
+
+        private static bool Equals(CommandConfig config1, CommandConfig config2)
+        {
+            return (config1.Name == config2.Name &&
+                config1.Id == config2.Id &&
+                config1.Prefix == config2.Prefix &&
+                config1.Source == config2.Source &&
+                config1.Modules == config2.Modules);
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = 1286316124;
+            hashCode = hashCode * -1521134295 + EqualityComparer<Collection<string>>.Default.GetHashCode(_modules);
+            hashCode = hashCode * -1521134295 + Source.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
+            hashCode = hashCode * -1521134295 + Id.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Prefix);
+            hashCode = hashCode * -1521134295 + EqualityComparer<IReadOnlyCollection<string>>.Default.GetHashCode(Modules);
+            return hashCode;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+
+        public override string ToString()
+        {
+            return base.ToString();
+        }
+
+        public static bool operator ==(CommandConfig config1, CommandConfig config2)
+        {
+            return Equals(config1, config2);
+        }
+
+        public static bool operator !=(CommandConfig config1, CommandConfig config2)
+        {
+            return !Equals(config1, config2);
         }
     }
 }
