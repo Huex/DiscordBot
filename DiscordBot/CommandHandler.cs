@@ -13,16 +13,14 @@ namespace DiscordBot.Core
 
         public IServiceProvider Services { get; set; }
         public CommandService Commands { get; set; }
-        public string Prefix { get; set; }
-        public ulong Id { get; }
+        public CommandConfig Config { get; set; }
 
-        public CommandHandler(DiscordSocketClient discord, IServiceProvider services, CommandService commands, string prefix, ulong id)
+        public CommandHandler(DiscordSocketClient discord, IServiceProvider services, CommandService commands, CommandConfig config)
         {
             _discord = discord;
             Commands.Log += RaiseLogAsync;
             Services = services;
-            Prefix = prefix;
-            Id = id;
+            Config = config;
         }
 
         public async Task HandleMessage(SocketMessage message)
@@ -34,8 +32,8 @@ namespace DiscordBot.Core
         {
             if (msg != null)
             {
-                int prefixInt = Prefix.Length - 1;
-                if (msg.HasStringPrefix(Prefix, ref prefixInt) || msg.HasMentionPrefix(_discord.CurrentUser, ref prefixInt))
+                int prefixInt = Config.Prefix.Length - 1;
+                if (msg.HasStringPrefix(Config.Prefix, ref prefixInt) || msg.HasMentionPrefix(_discord.CurrentUser, ref prefixInt))
                 {
                     await ProcessCommandAsync(prefixInt, msg);
                 }
@@ -53,7 +51,7 @@ namespace DiscordBot.Core
             }
             else
             {
-                RaiseLog(LogSeverity.Critical, "БЛЯ");
+                await message.AddReactionAsync(new Discord.Emoji("✅"));
             }
         }
     }
