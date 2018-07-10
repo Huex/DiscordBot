@@ -40,7 +40,7 @@ namespace DiscordBot.Core
             foreach (var packet in _packets)
             {
                 packet.Log += RaiseLogAsync;
-                packet.Discord = Discord;
+                packet.SetDiscordSocket(Discord);
                 SubscribeEventsHandlersByPacket(packet);
             }
         }
