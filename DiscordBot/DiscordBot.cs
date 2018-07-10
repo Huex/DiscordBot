@@ -15,34 +15,77 @@ namespace DiscordBot.Core
         private DiscordSocketClient _discord;
 
         private readonly List<Packet> _packets;
+        private readonly string _token;
         private readonly NotifyDictonary<ulong, CommandHandler> _commandHandlers = new NotifyDictonary<ulong, CommandHandler>();
-        private readonly NotifyDictonary<ulong, CommandConfig> _commandConfigs = new NotifyDictonary<ulong, CommandConfig>();
+        private readonly NotifyDictonary<ulong, CommandConfig> _initCommandConfigs = new NotifyDictonary<ulong, CommandConfig>();
         private readonly ServiceCollection _guildServices = new ServiceCollection();
         private readonly ServiceCollection _dmServices = new ServiceCollection();
         private readonly CommandService _guildModules = new CommandService();
         private readonly CommandService _dmModules = new CommandService();
 
-        public IReadOnlyDictionary<ulong, CommandConfig> CommandConfigs => _commandConfigs;
+        public IReadOnlyDictionary<ulong, CommandConfig> CommandConfigs => _initCommandConfigs;
         public event Action<ulong, CommandConfig> CommandConfigUpdated;
 
 
         public BotConfig Config { get; }
 
-        public DiscordBot(BotConfig config, Dictionary<ulong, CommandConfig> commandConfigs, ICollection<Packet> packets)
+        public DiscordBot(BotConfig config, IDictionary<ulong, CommandConfig> commandConfigs, ICollection<Packet> packets) : this(config, packets)
         {
-            _commandConfigs.ValueUpdated += CommandConfigsValueUpdated;
+            ThrowArgumentExceptionIfNull(commandConfigs);
+            _initCommandConfigs = new NotifyDictonary<ulong, CommandConfig>(commandConfigs);
+        }
+
+        public DiscordBot(BotConfig config, ICollection<Packet> packets)
+        {          
+            ThrowArgumentExceptionIfNull(packets);
+            _token = config.Token;
             config.Token = "";
             Config = config;
             _discord = new DiscordSocketClient(Config.DiscordSocket);
-            _discord.Log += RaiseLogAsync;
             _packets = new List<Packet>(packets);
+            _discord.Log += RaiseLogAsync;
+            //_commandConfigs.ValueUpdated += OnCommandConfigsValueUpdated;
+            //_commandConfigs.ValueUpdated += UpdateCommandHandler;
             InitPackets();
             InitCommandsHandler();
         }
 
-        private void CommandConfigsValueUpdated(ulong id)
+        //private void UpdateCommandHandler(ulong id)
+        //{
+        //    if (_commandHandlers.ContainsKey(id))
+        //    {
+        //        if(_commandHandlers[id].Config == _commandConfigs[id])
+        //        {
+
+        //        }
+        //    }
+        //}
+
+        public async Task StartAsync()
         {
-            CommandConfigUpdated?.Invoke(id, _commandConfigs[id]);
+            await _discord.LoginAsync(TokenType.Bot, _token);
+            await _discord.StartAsync();
+        }
+
+        public void UpdateCommandConfig(ulong id, CommandConfig config)
+        {
+            if (_commandHandlers.ContainsKey(id))
+            {
+                _commandHandlers[id].Config = config;
+            }
+        }
+
+        private void OnCommandConfigsValueUpdated(ulong id, CommandConfig config)
+        {
+            CommandConfigUpdated?.Invoke(id, config);
+        }
+
+        private static void ThrowArgumentExceptionIfNull(object obj)
+        {
+            if (obj == null)
+            {
+                throw new ArgumentNullException(nameof(obj));
+            }
         }
 
         private void InitPackets()
@@ -124,13 +167,21 @@ namespace DiscordBot.Core
                 switch (source)
                 {
                     case CommandSource.User:
-                        AddCommandHandler(new CommandHandler(_discord, _dmServices.BuildServiceProvider(), _dmModules, Config.DefaultPrefix, id));
-                        break;
+                        {
+                            var config = _initCommandConfigs.ContainsKey(id) ? _initCommandConfigs[id] : Config.DefaultUserCommandConfig;
+                            AddCommandHandler(new CommandHandler(_discord, _dmServices.BuildServiceProvider(), _dmModules, config));
+                            break;
+                        }
                     case CommandSource.Guild:
-                        AddCommandHandler(new CommandHandler(_discord, _guildServices.BuildServiceProvider(), _guildModules, Config.DefaultPrefix, id));
-                        break;
+                        {
+                            var config = _initCommandConfigs.ContainsKey(id) ? _initCommandConfigs[id] : Config.DefaultGuildCommandConfig;
+                            AddCommandHandler(new CommandHandler(_discord, _dmServices.BuildServiceProvider(), _dmModules, config));
+                            break;
+                        }
                     default:
-                        break;
+                        {
+                            break;
+                        }
                 }
             }
         }
@@ -138,8 +189,8 @@ namespace DiscordBot.Core
         private void AddCommandHandler(CommandHandler handler)
         {
             handler.Log += RaiseLogAsync;
-            _commandHandlers.Add(handler.Id, handler);
-            RaiseLog(LogSeverity.Debug, $"Command handler added, id user/guild = {handler.Id}");
+            _commandHandlers.Add(handler.Config.Id, handler);
+            RaiseLog(LogSeverity.Debug, $"Command handler added, id user/guild = {handler.Config.Id}");
         }
 
         private void ExtractCommandsData(Packet packet)
