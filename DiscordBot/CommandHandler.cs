@@ -10,10 +10,24 @@ namespace DiscordBot.Core
     public class CommandHandler : LogEntity
     {
         private readonly DiscordSocketClient _discord;
+        private CommandConfig _config;
 
         public IServiceProvider Services { get; set; }
         public CommandService Commands { get; set; }
-        public CommandConfig Config { get; set; }
+        public CommandConfig Config
+        {
+            get
+            {
+                return _config;
+            }
+            set
+            {
+                _config = value;
+                ConfigUpdated?.Invoke(_config.Id, _config);
+            }
+        }
+
+        public event Action<ulong, CommandConfig> ConfigUpdated;
 
         public CommandHandler(DiscordSocketClient discord, IServiceProvider services, CommandService commands, CommandConfig config)
         {
