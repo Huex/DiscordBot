@@ -7,7 +7,8 @@ namespace DiscordBot.Utils
     public class NotifyDictonary<Tkey, Tvalue> : Dictionary<Tkey, Tvalue>
     {
         public NotifyDictonary() : base() { }
-        NotifyDictonary(int capacity) : base(capacity) { }
+        public NotifyDictonary(int capacity) : base(capacity) { }
+        public NotifyDictonary(IDictionary<Tkey, Tvalue> dic) : base(dic) { }
 
         public event Action<Tkey> ValueUpdated;
 
