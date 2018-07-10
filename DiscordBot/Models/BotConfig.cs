@@ -5,7 +5,6 @@ namespace DiscordBot
 {
     public struct BotConfig : IEquatable<BotConfig>
     {
-        public string DefaultPrefix { get; set; } 
         public LogSeverity LogLevel { get; set; }
         public Discord.LogSeverity DiscordSocketLogLevel { get; set; }
         public string Token { get; set; }
@@ -15,8 +14,8 @@ namespace DiscordBot
         public bool AlwaysDownloadUsers { get; set; }
         public int? HandlerTimeout { get; set; }
 
-        public CommandConfig DefaultUserCommandConfig { get; set; }
-        public CommandConfig DefaultGuildCommandConfig { get; set; }
+        public CommandConfigBuilder DefaultUserCommandConfig { get; set; }
+        public CommandConfigBuilder DefaultGuildCommandConfig { get; set; }
 
         public DiscordSocketConfig DiscordSocket
         {
@@ -36,8 +35,7 @@ namespace DiscordBot
 
         public bool Equals(BotConfig other)
         {
-            return (DefaultPrefix == other.DefaultPrefix &&
-                LogLevel == other.LogLevel &&
+            return (LogLevel == other.LogLevel &&
                 DiscordSocketLogLevel == other.DiscordSocketLogLevel &&
                 Token == other.Token &&
                 ConnectionTimeout == other.ConnectionTimeout &&
