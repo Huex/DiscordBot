@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -11,28 +12,37 @@ namespace DiscordBot.Core
 {
     public class DiscordBot : LogEntity
     {
+        private DiscordSocketClient _discord;
+
         private readonly List<Packet> _packets;
-        private readonly Dictionary<ulong, CommandHandler> _commandHandlers = new Dictionary<ulong, CommandHandler>();
+        private readonly NotifyDictonary<ulong, CommandHandler> _commandHandlers = new NotifyDictonary<ulong, CommandHandler>();
+        private readonly NotifyDictonary<ulong, CommandConfig> _commandConfigs = new NotifyDictonary<ulong, CommandConfig>();
         private readonly ServiceCollection _guildServices = new ServiceCollection();
         private readonly ServiceCollection _dmServices = new ServiceCollection();
         private readonly CommandService _guildModules = new CommandService();
         private readonly CommandService _dmModules = new CommandService();
-        private readonly IDataProvider _data;
-        private readonly Dictionary<ulong, CommandConfig> _commandConfigs;
+
+        public IReadOnlyDictionary<ulong, CommandConfig> CommandConfigs => _commandConfigs;
+        public event Action<ulong, CommandConfig> CommandConfigUpdated;
+
 
         public BotConfig Config { get; }
-        public DiscordSocketClient Discord { get; }
 
-        public DiscordBot(BotConfig config, IDataProvider data, ICollection<Packet> packets)
+        public DiscordBot(BotConfig config, Dictionary<ulong, CommandConfig> commandConfigs, ICollection<Packet> packets)
         {
+            _commandConfigs.ValueUpdated += CommandConfigsValueUpdated;
             config.Token = "";
             Config = config;
-            _data = data;
-            Discord = new DiscordSocketClient(Config.DiscordSocket);
-            Discord.Log += RaiseLogAsync;
+            _discord = new DiscordSocketClient(Config.DiscordSocket);
+            _discord.Log += RaiseLogAsync;
             _packets = new List<Packet>(packets);
             InitPackets();
             InitCommandsHandler();
+        }
+
+        private void CommandConfigsValueUpdated(ulong id)
+        {
+            CommandConfigUpdated?.Invoke(id, _commandConfigs[id]);
         }
 
         private void InitPackets()
@@ -40,20 +50,20 @@ namespace DiscordBot.Core
             foreach (var packet in _packets)
             {
                 packet.Log += RaiseLogAsync;
-                packet.SetDiscordSocket(Discord);
+                packet.SetDiscordSocket(_discord);
                 SubscribeEventsHandlersByPacket(packet);
             }
         }
 
         private void InitCommandsHandler()
         {
-            Discord.GuildAvailable += AddCommandHandler;
-            Discord.Ready += AddDMCommandHandlersAsync;
-            Discord.JoinedGuild += AddCommandHandler;
-            Discord.GuildUnavailable += RemoveCommandHandler;
-            Discord.MessageReceived += HandleMessage;
-            Discord.ChannelCreated += AddDMCommandHandler;
-            Discord.ChannelDestroyed += RemoveDMCommandHandler;
+            _discord.GuildAvailable += AddCommandHandler;
+            _discord.Ready += AddDMCommandHandlersAsync;
+            _discord.JoinedGuild += AddCommandHandler;
+            _discord.GuildUnavailable += RemoveCommandHandler;
+            _discord.MessageReceived += HandleMessage;
+            _discord.ChannelCreated += AddDMCommandHandler;
+            _discord.ChannelDestroyed += RemoveDMCommandHandler;
             foreach (var packet in _packets)
             {
                 ExtractCommandsData(packet);
@@ -62,7 +72,7 @@ namespace DiscordBot.Core
 
         private async Task AddDMCommandHandlersAsync()
         {
-            var channels = await Discord.GetDMChannelsAsync();
+            var channels = await _discord.GetDMChannelsAsync();
             foreach(var channel in channels)
             {
                 AddCommandHandler(CommandSource.User, channel.Id);
@@ -114,10 +124,10 @@ namespace DiscordBot.Core
                 switch (source)
                 {
                     case CommandSource.User:
-                        AddCommandHandler(new CommandHandler(Discord, _dmServices.BuildServiceProvider(), _dmModules, Config.DefaultPrefix, id));
+                        AddCommandHandler(new CommandHandler(_discord, _dmServices.BuildServiceProvider(), _dmModules, Config.DefaultPrefix, id));
                         break;
                     case CommandSource.Guild:
-                        AddCommandHandler(new CommandHandler(Discord, _guildServices.BuildServiceProvider(), _guildModules, Config.DefaultPrefix, id));
+                        AddCommandHandler(new CommandHandler(_discord, _guildServices.BuildServiceProvider(), _guildModules, Config.DefaultPrefix, id));
                         break;
                     default:
                         break;
@@ -156,7 +166,7 @@ namespace DiscordBot.Core
         {
             if (arg is SocketUserMessage msg)
             {
-                var context = new SocketCommandContext(Discord, msg);
+                var context = new SocketCommandContext(_discord, msg);
                 if (context.Guild != null)
                 {
                     _commandHandlers.GetValueOrDefault(context.Guild.Id, null)?.HandleMessage(arg).ConfigureAwait(false);
@@ -208,40 +218,40 @@ namespace DiscordBot.Core
 
         private void SubscribeEventsHandlersByPacket(Packet packet)
         {
-            Discord.ChannelCreated += packet.EventsHandlers.ChannelCreated;
-            Discord.ChannelDestroyed += packet.EventsHandlers.ChannelDestroyed;
-            Discord.ChannelUpdated += packet.EventsHandlers.ChannelUpdated;
-            Discord.Connected += packet.EventsHandlers.Connected;
-            Discord.CurrentUserUpdated += packet.EventsHandlers.CurrentUserUpdated;
-            Discord.Disconnected += packet.EventsHandlers.Disconnected;
-            Discord.GuildAvailable += packet.EventsHandlers.GuildAvailable;
-            Discord.GuildMembersDownloaded += packet.EventsHandlers.GuildMembersDownloaded;
-            Discord.GuildMemberUpdated += packet.EventsHandlers.GuildMemberUpdated;
-            Discord.GuildUnavailable += packet.EventsHandlers.GuildUnavailable;
-            Discord.GuildUpdated += packet.EventsHandlers.GuildUpdated;
-            Discord.JoinedGuild += packet.EventsHandlers.JoinedGuild;
-            Discord.LeftGuild += packet.EventsHandlers.LeftGuild;
-            Discord.LoggedIn += packet.EventsHandlers.LoggedIn;
-            Discord.LoggedOut += packet.EventsHandlers.LoggedOut;
-            Discord.MessageUpdated += packet.EventsHandlers.MessageUpdated;
-            Discord.MessageReceived += packet.EventsHandlers.MessageReceived;
-            Discord.ReactionAdded += packet.EventsHandlers.ReactionAdded;
-            Discord.ReactionRemoved += packet.EventsHandlers.ReactionRemoved;
-            Discord.ReactionsCleared += packet.EventsHandlers.ReactionsCleared;
-            Discord.Ready += packet.EventsHandlers.Ready;
-            Discord.RecipientAdded += packet.EventsHandlers.RecipientAdded;
-            Discord.RecipientRemoved += packet.EventsHandlers.RecipientRemoved;
-            Discord.RoleCreated += packet.EventsHandlers.RoleCreated;
-            Discord.RoleDeleted += packet.EventsHandlers.RoleDeleted;
-            Discord.RoleUpdated += packet.EventsHandlers.RoleUpdated;
-            Discord.UserBanned += packet.EventsHandlers.UserBanned;
-            Discord.UserIsTyping += packet.EventsHandlers.UserIsTyping;
-            Discord.UserJoined += packet.EventsHandlers.UserJoined;
-            Discord.UserLeft += packet.EventsHandlers.UserLeft;
-            Discord.UserUnbanned += packet.EventsHandlers.UserUnbanned;
-            Discord.UserUpdated += packet.EventsHandlers.UserUpdated;
-            Discord.UserVoiceStateUpdated += packet.EventsHandlers.UserVoiceStateUpdated;
-            Discord.MessageDeleted += packet.EventsHandlers.MessageDeleted;
+            _discord.ChannelCreated += packet.EventsHandlers.ChannelCreated;
+            _discord.ChannelDestroyed += packet.EventsHandlers.ChannelDestroyed;
+            _discord.ChannelUpdated += packet.EventsHandlers.ChannelUpdated;
+            _discord.Connected += packet.EventsHandlers.Connected;
+            _discord.CurrentUserUpdated += packet.EventsHandlers.CurrentUserUpdated;
+            _discord.Disconnected += packet.EventsHandlers.Disconnected;
+            _discord.GuildAvailable += packet.EventsHandlers.GuildAvailable;
+            _discord.GuildMembersDownloaded += packet.EventsHandlers.GuildMembersDownloaded;
+            _discord.GuildMemberUpdated += packet.EventsHandlers.GuildMemberUpdated;
+            _discord.GuildUnavailable += packet.EventsHandlers.GuildUnavailable;
+            _discord.GuildUpdated += packet.EventsHandlers.GuildUpdated;
+            _discord.JoinedGuild += packet.EventsHandlers.JoinedGuild;
+            _discord.LeftGuild += packet.EventsHandlers.LeftGuild;
+            _discord.LoggedIn += packet.EventsHandlers.LoggedIn;
+            _discord.LoggedOut += packet.EventsHandlers.LoggedOut;
+            _discord.MessageUpdated += packet.EventsHandlers.MessageUpdated;
+            _discord.MessageReceived += packet.EventsHandlers.MessageReceived;
+            _discord.ReactionAdded += packet.EventsHandlers.ReactionAdded;
+            _discord.ReactionRemoved += packet.EventsHandlers.ReactionRemoved;
+            _discord.ReactionsCleared += packet.EventsHandlers.ReactionsCleared;
+            _discord.Ready += packet.EventsHandlers.Ready;
+            _discord.RecipientAdded += packet.EventsHandlers.RecipientAdded;
+            _discord.RecipientRemoved += packet.EventsHandlers.RecipientRemoved;
+            _discord.RoleCreated += packet.EventsHandlers.RoleCreated;
+            _discord.RoleDeleted += packet.EventsHandlers.RoleDeleted;
+            _discord.RoleUpdated += packet.EventsHandlers.RoleUpdated;
+            _discord.UserBanned += packet.EventsHandlers.UserBanned;
+            _discord.UserIsTyping += packet.EventsHandlers.UserIsTyping;
+            _discord.UserJoined += packet.EventsHandlers.UserJoined;
+            _discord.UserLeft += packet.EventsHandlers.UserLeft;
+            _discord.UserUnbanned += packet.EventsHandlers.UserUnbanned;
+            _discord.UserUpdated += packet.EventsHandlers.UserUpdated;
+            _discord.UserVoiceStateUpdated += packet.EventsHandlers.UserVoiceStateUpdated;
+            _discord.MessageDeleted += packet.EventsHandlers.MessageDeleted;
         }
     }
 }
