@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using DiscordBot.Utils;
+using Newtonsoft.Json;
 using System.IO;
 using System.Text;
 
@@ -23,7 +24,7 @@ namespace DiscordBot.Jill
 
         internal static void WriteBotConfig(string path, BotConfig botSettings)
         {
-            File.WriteAllText(path, JsonConvert.SerializeObject(botSettings), TextEncoding);
+            File.WriteAllText(path, JsonConvert.SerializeObject(botSettings, new JsonSerializerSettings { ContractResolver = new IgnoreParentPropertiesResolver(true)} ), TextEncoding);
         }
 
         internal static void WriteGuildConfig(string path, CommandConfig guildConfig)

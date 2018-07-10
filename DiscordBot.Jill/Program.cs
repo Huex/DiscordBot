@@ -2,7 +2,10 @@
 using DiscordBot.Packets.Settings;
 using System;
 using System.Collections.ObjectModel;
+using System.Data;
+using System.IO;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace DiscordBot.Jill
 {
@@ -47,16 +50,17 @@ namespace DiscordBot.Jill
         private async Task MainAsync()
         {
             var botSettings = FileDataManager.ReadBotConfig("settings.json");
-
+            //var botSettings1 = new BotConfig();
+            //botSettings1.DefaultGuildCommandConfig = new CommandConfigBuilder();
+            //botSettings1.DefaultGuildCommandConfig.Modules = new Collection<string>();
+            //botSettings1.DefaultGuildCommandConfig.Modules.Add("dasd");
+            //FileDataManager.WriteBotConfig("settings2.json", botSettings1);
             _bot = new Core.DiscordBot(botSettings, new Collection<Packet>
             {
                 new SettingsPacket()
             });
-
             _bot.Log += Log;
-            await _bot.Discord.LoginAsync(Discord.TokenType.Bot, botSettings.Token);
-            await _bot.Discord.StartAsync();
-
+            await _bot.StartAsync();
             await Task.Delay(-1);
         }
     }
