@@ -15,6 +15,9 @@ namespace DiscordBot
         public bool AlwaysDownloadUsers { get; set; }
         public int? HandlerTimeout { get; set; }
 
+        public CommandConfig DefaultUserCommandConfig { get; set; }
+        public CommandConfig DefaultGuildCommandConfig { get; set; }
+
         public DiscordSocketConfig DiscordSocket
         {
             get
