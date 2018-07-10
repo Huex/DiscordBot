@@ -5,6 +5,7 @@ namespace DiscordBot
 {
     public class CommandConfigBuilder
     {
+        public CommandSource Source { get; set; }
         public string Name { get; set; }
         public ulong Id { get; set; }
         public string Prefix { get; set; }
@@ -13,12 +14,13 @@ namespace DiscordBot
         public CommandConfigBuilder() { }
 
         public CommandConfigBuilder(CommandConfig guildConfig) : 
-            this(guildConfig.Name, guildConfig.Id, guildConfig.Prefix, 
+            this(guildConfig.Source, guildConfig.Name, guildConfig.Id, guildConfig.Prefix, 
                 new Collection<string>(new List<string>(guildConfig.Modules))) { }
 
-        public CommandConfigBuilder(string name, ulong id, string prefix, Collection<string> modules) :
+        public CommandConfigBuilder(CommandSource source, string name, ulong id, string prefix, Collection<string> modules) :
             this()
         {
+            Source = source;
             Name = name;
             Id = id;
             Prefix = prefix;
@@ -27,7 +29,7 @@ namespace DiscordBot
 
         public CommandConfig Build()
         {
-            return new CommandConfig(Name, Id, Prefix, Modules);
+            return new CommandConfig(Source, Name, Id, Prefix, Modules);
         }
     }
 }
