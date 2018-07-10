@@ -16,23 +16,22 @@ namespace DiscordBot.Core
 
         private readonly List<Packet> _packets;
         private readonly string _token;
-        private readonly NotifyDictonary<ulong, CommandHandler> _commandHandlers = new NotifyDictonary<ulong, CommandHandler>();
-        private readonly NotifyDictonary<ulong, CommandConfig> _initCommandConfigs = new NotifyDictonary<ulong, CommandConfig>();
+        private readonly Dictionary<ulong, CommandHandler> _commandHandlers = new Dictionary<ulong, CommandHandler>();
         private readonly ServiceCollection _guildServices = new ServiceCollection();
         private readonly ServiceCollection _dmServices = new ServiceCollection();
         private readonly CommandService _guildModules = new CommandService();
         private readonly CommandService _dmModules = new CommandService();
 
-        public IReadOnlyDictionary<ulong, CommandConfig> CommandConfigs => _initCommandConfigs;
         public event Action<ulong, CommandConfig> CommandConfigUpdated;
 
+        public readonly Dictionary<ulong, CommandConfig> InitCommandConfigs = new Dictionary<ulong, CommandConfig>();
 
         public BotConfig Config { get; }
 
-        public DiscordBot(BotConfig config, IDictionary<ulong, CommandConfig> commandConfigs, ICollection<Packet> packets) : this(config, packets)
+        public DiscordBot(BotConfig config, IDictionary<ulong, CommandConfig> initCommandConfigs, ICollection<Packet> packets) : this(config, packets)
         {
-            ThrowArgumentExceptionIfNull(commandConfigs);
-            _initCommandConfigs = new NotifyDictonary<ulong, CommandConfig>(commandConfigs);
+            ThrowArgumentExceptionIfNull(initCommandConfigs);
+            InitCommandConfigs = new NotifyDictonary<ulong, CommandConfig>(initCommandConfigs);
         }
 
         public DiscordBot(BotConfig config, ICollection<Packet> packets)
@@ -44,22 +43,20 @@ namespace DiscordBot.Core
             _discord = new DiscordSocketClient(Config.DiscordSocket);
             _packets = new List<Packet>(packets);
             _discord.Log += RaiseLogAsync;
-            //_commandConfigs.ValueUpdated += OnCommandConfigsValueUpdated;
-            //_commandConfigs.ValueUpdated += UpdateCommandHandler;
             InitPackets();
             InitCommandsHandler();
         }
 
-        //private void UpdateCommandHandler(ulong id)
-        //{
-        //    if (_commandHandlers.ContainsKey(id))
-        //    {
-        //        if(_commandHandlers[id].Config == _commandConfigs[id])
-        //        {
-
-        //        }
-        //    }
-        //}
+        private void UpdateCommandHandlerConfig(ulong id, CommandConfig config)
+        {
+            if (_commandHandlers.ContainsKey(id))
+            {
+                if (_commandHandlers[id].Config != config)
+                {
+                    _commandHandlers[id].Config = config;
+                }
+            }
+        }
 
         public async Task StartAsync()
         {
@@ -118,7 +115,7 @@ namespace DiscordBot.Core
             var channels = await _discord.GetDMChannelsAsync();
             foreach(var channel in channels)
             {
-                AddCommandHandler(CommandSource.User, channel.Id);
+                AddCommandHandler(CommandSource.User, channel);
             }
         }
 
@@ -135,7 +132,7 @@ namespace DiscordBot.Core
         {
             if (arg is IDMChannel channel)
             {
-                AddCommandHandler(CommandSource.User, channel.Recipient.Id);
+                AddCommandHandler(CommandSource.User, arg);
             }       
             return Task.CompletedTask;
         }
@@ -156,34 +153,57 @@ namespace DiscordBot.Core
 
         private Task AddCommandHandler(SocketGuild guild)
         {
-            AddCommandHandler(CommandSource.Guild, guild.Id);
+            AddCommandHandler(CommandSource.Guild, guild);
             return Task.CompletedTask;
         }
 
-        private void AddCommandHandler(CommandSource source, ulong id)
+        private void AddCommandHandler(CommandSource source, IEntity<ulong> socket)
         {
-            if (!_commandHandlers.ContainsKey(id))
+            if (!_commandHandlers.ContainsKey(socket.Id))
             {
                 switch (source)
                 {
                     case CommandSource.User:
-                        {
-                            var config = _initCommandConfigs.ContainsKey(id) ? _initCommandConfigs[id] : Config.DefaultUserCommandConfig;
-                            AddCommandHandler(new CommandHandler(_discord, _dmServices.BuildServiceProvider(), _dmModules, config));
-                            break;
-                        }
+                        AddCommandHandler(socket as IDMChannel, _dmServices, _dmModules);
+                        break;
                     case CommandSource.Guild:
-                        {
-                            var config = _initCommandConfigs.ContainsKey(id) ? _initCommandConfigs[id] : Config.DefaultGuildCommandConfig;
-                            AddCommandHandler(new CommandHandler(_discord, _dmServices.BuildServiceProvider(), _dmModules, config));
-                            break;
-                        }
+                        AddCommandHandler(socket as SocketGuild, _guildServices, _guildModules);
+                        break;
                     default:
-                        {
-                            break;
-                        }
+                        break;
                 }
             }
+        }
+
+        private void AddCommandHandler(SocketGuild socketGuild, ServiceCollection guildServices, CommandService guildModules)
+        {
+            var config = InitCommandConfigs.ContainsKey(socketGuild.Id) ? InitCommandConfigs[socketGuild.Id] : Config.DefaultUserCommandConfig;
+            var builder = new CommandConfigBuilder(config)
+            {
+                Id = socketGuild.Id,
+                Name = socketGuild.Name,
+                Source = CommandSource.Guild
+            };
+            AddCommandHandler(builder.Build(), guildServices, guildModules);
+        }
+
+        private void AddCommandHandler(IDMChannel channel, ServiceCollection dmServices, CommandService dmModules)
+        {
+            var config = InitCommandConfigs.ContainsKey(channel.Id) ? InitCommandConfigs[channel.Id] : Config.DefaultUserCommandConfig;
+            var builder = new CommandConfigBuilder(config)
+            {
+                Id = channel.Id,
+                Name = channel.Recipient.Mention,
+                Source = CommandSource.User
+            };
+            AddCommandHandler(builder.Build(), dmServices, dmModules);
+        }
+
+        private void AddCommandHandler(CommandConfig config, ServiceCollection services, CommandService modules)
+        {
+            var handler = new CommandHandler(_discord, services.BuildServiceProvider(), modules, config);
+            handler.ConfigUpdated += OnCommandConfigsValueUpdated;
+            AddCommandHandler(handler);
         }
 
         private void AddCommandHandler(CommandHandler handler)
