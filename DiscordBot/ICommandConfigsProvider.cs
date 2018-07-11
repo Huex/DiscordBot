@@ -8,6 +8,7 @@ namespace DiscordBot
     {
         void UpdateCommandConfig(ulong id, CommandConfig config);
         void CreateCommandConfig(CommandConfig config);
+        CommandConfig? GetCommandConfigIfExsist(ulong id);
         ICollection<CommandConfig> GetCommandConfigs();
     }
 }

@@ -56,7 +56,7 @@ namespace DiscordBot.Jill
             //botSettings1.DefaultGuildCommandConfig.Modules = new Collection<string>();
             //botSettings1.DefaultGuildCommandConfig.Modules.Add("dasd");
             //FileDataManager.WriteBotConfig("settings2.json", botSettings1);
-            _bot = new Core.DiscordBot(botSettings, commandProvider, new Collection<Packet>
+            _bot = new Core.DiscordBot(botSettings, commandProvider, new Collection<PacketBase>
             {
                 new SettingsPacket()
             });

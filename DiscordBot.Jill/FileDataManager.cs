@@ -71,6 +71,20 @@ namespace DiscordBot.Jill
             return ReadAllCommandConfigs();
         }
 
+        CommandConfig? ICommandConfigsProvider.GetCommandConfigIfExsist(ulong id)
+        {
+            var filesPaths = Directory.GetFiles(GUILDS_PATH);
+            foreach (var filePath in filesPaths)
+            {
+                if (filePath.Contains($"{id}.{FILE_TYPE}"))
+                {
+                    var config = (CommandConfigBuilder)JsonConvert.DeserializeObject(File.ReadAllText(filePath, TextEncoding), typeof(CommandConfigBuilder));
+                    return config.Build();
+                }
+            }
+            return null;
+        }
+
 
 
 
