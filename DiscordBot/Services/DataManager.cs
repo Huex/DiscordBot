@@ -8,11 +8,9 @@ namespace DiscordBot.Services
 {
     public class DataManager : ServiceBase
     {
-        private IDataProvider _data;
 
-        public DataManager(IDataProvider data)
+        public DataManager()
         {
-            _data = data;
         }
 
         internal void SetGuildPrefix(ulong id, string prefix)
