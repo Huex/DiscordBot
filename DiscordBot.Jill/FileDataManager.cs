@@ -7,7 +7,7 @@ using System.Text;
 
 namespace DiscordBot.Jill
 {
-    public class FileDataManager
+    public class FileDataManager : ICommandConfigsProvider
     {
         public static readonly Encoding TextEncoding = Encoding.UTF8;
         public static readonly string FILE_TYPE = "json";
@@ -15,7 +15,7 @@ namespace DiscordBot.Jill
 
         private static string GetGuildPath(ulong guildId) => GUILDS_PATH + guildId + "." + FILE_TYPE;
 
-        internal static void WriteGuildConfig(CommandConfig config) => WriteCommandConfig(GetGuildPath(config.Id), config);
+        internal static void WriteCommandConfig(CommandConfig config) => WriteCommandConfig(GetGuildPath(config.Id), config);
 
         internal static CommandConfig ReadCommandConfig(ulong id) => ReadCommanderConfig(GetGuildPath(id));
 
@@ -39,9 +39,9 @@ namespace DiscordBot.Jill
             return ((CommandConfigBuilder)JsonConvert.DeserializeObject(File.ReadAllText(path, TextEncoding), typeof(CommandConfigBuilder))).Build();
         }
 
-        internal static Dictionary<ulong, CommandConfig> ReadAllCommandConfigs()
+        internal static Collection<CommandConfig> ReadAllCommandConfigs()
         {
-            var commandsConfigs = new Dictionary<ulong, CommandConfig>();
+            var commandsConfigs = new Collection<CommandConfig>();
 
             var filesPaths = Directory.GetFiles(GUILDS_PATH);
             foreach (var filePath in filesPaths)
@@ -49,11 +49,26 @@ namespace DiscordBot.Jill
                 var config = (CommandConfigBuilder)JsonConvert.DeserializeObject(File.ReadAllText(filePath, TextEncoding), typeof(CommandConfigBuilder));
                 if (config != null)
                 {
-                    commandsConfigs.TryAdd(config.Id, config.Build());
+                    commandsConfigs.Add(config.Build());
                 }
             }
             return commandsConfigs;
 
+        }
+
+        void ICommandConfigsProvider.UpdateCommandConfig(ulong id, CommandConfig config)
+        {
+            WriteCommandConfig(config);
+        }
+
+        void ICommandConfigsProvider.CreateCommandConfig(CommandConfig config)
+        {
+            WriteCommandConfig(config);
+        }
+
+        ICollection<CommandConfig> ICommandConfigsProvider.GetCommandConfigs()
+        {
+            return ReadAllCommandConfigs();
         }
 
 

@@ -50,26 +50,19 @@ namespace DiscordBot.Jill
         private async Task MainAsync()
         {
             var botSettings = FileDataManager.ReadBotConfig("settings.json");
-            var configs = FileDataManager.ReadAllCommandConfigs();
+            ICommandConfigsProvider commandProvider = new FileDataManager();
             //var botSettings1 = new BotConfig();
             //botSettings1.DefaultGuildCommandConfig = new CommandConfigBuilder();
             //botSettings1.DefaultGuildCommandConfig.Modules = new Collection<string>();
             //botSettings1.DefaultGuildCommandConfig.Modules.Add("dasd");
             //FileDataManager.WriteBotConfig("settings2.json", botSettings1);
-            _bot = new Core.DiscordBot(botSettings, configs, new Collection<Packet>
+            _bot = new Core.DiscordBot(botSettings, commandProvider, new Collection<Packet>
             {
                 new SettingsPacket()
             });
             _bot.Log += Log;
-            _bot.CommandConfigUpdated += WriteToFile;
-            _bot.CommandConfigCreated += WriteToFile;
             await _bot.StartAsync();
             await Task.Delay(-1).ConfigureAwait(true);
-        }
-
-        private void WriteToFile(ulong id, CommandConfig config)
-        {
-            FileDataManager.WriteGuildConfig(config);
         }
     }
 }

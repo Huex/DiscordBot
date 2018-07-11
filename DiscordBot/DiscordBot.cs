@@ -21,21 +21,40 @@ namespace DiscordBot.Core
         private readonly ServiceCollection _dmServices = new ServiceCollection();
         private readonly CommandService _guildModules = new CommandService();
         private readonly CommandService _dmModules = new CommandService();
-
-        public event Action<ulong, CommandConfig> CommandConfigUpdated;
-        public event Action<ulong, CommandConfig> CommandConfigCreated;
+        private ICommandConfigsProvider _configsProvider;
 
         public BotConfig Config { get; }
-        public Dictionary<ulong, CommandConfig> InitCommandConfigs { get; } = new Dictionary<ulong, CommandConfig>();
-
-        public DiscordBot(BotConfig config, IDictionary<ulong, CommandConfig> initCommandConfigs, ICollection<Packet> packets) : this(config, packets)
+        public ICommandConfigsProvider ConfigsProvider
         {
-            ThrowArgumentExceptionIfNull(initCommandConfigs);
-            InitCommandConfigs = new Dictionary<ulong, CommandConfig>(initCommandConfigs);
+            get
+            {
+                return _configsProvider;
+            }
+            set
+            {
+                _configsProvider = value;
+                InitCommandConfigs(ConfigsProvider);
+            }
+        }
+        public Dictionary<ulong, CommandConfig> CommandConfigs { get; } = new Dictionary<ulong, CommandConfig>();
+
+        public DiscordBot(BotConfig config, ICommandConfigsProvider configsProvider, ICollection<Packet> packets) : this(config, packets)
+        {
+            ThrowArgumentExceptionIfNull(configsProvider);
+            ConfigsProvider = configsProvider;
+            InitCommandConfigs(ConfigsProvider);
+        }
+
+        private void InitCommandConfigs(ICommandConfigsProvider configsProvider)
+        {
+            foreach (var command in configsProvider.GetCommandConfigs())
+            {
+                CommandConfigs.TryAdd(command.Id, command);
+            }
         }
 
         public DiscordBot(BotConfig config, ICollection<Packet> packets)
-        {          
+        {
             ThrowArgumentExceptionIfNull(packets);
             _token = config.Token;
             config.Token = "";
@@ -70,11 +89,6 @@ namespace DiscordBot.Core
             {
                 _commandHandlers[id].Config = config;
             }
-        }
-
-        private void OnCommandConfigsValueUpdated(ulong id, CommandConfig config)
-        {
-            CommandConfigUpdated?.Invoke(id, config);
         }
 
         private static void ThrowArgumentExceptionIfNull(object obj)
@@ -113,7 +127,7 @@ namespace DiscordBot.Core
         private async Task AddDMCommandHandlersAsync()
         {
             var channels = await _discord.GetDMChannelsAsync();
-            foreach(var channel in channels)
+            foreach (var channel in channels)
             {
                 AddCommandHandler(CommandSource.User, channel);
             }
@@ -170,7 +184,7 @@ namespace DiscordBot.Core
             if (!_commandHandlers.ContainsKey(guild.Id))
             {
                 AddCommandHandler(CommandSource.Guild, guild);
-            }          
+            }
             return Task.CompletedTask;
         }
 
@@ -194,7 +208,7 @@ namespace DiscordBot.Core
 
         private void AddCommandHandler(SocketGuild socketGuild, ServiceCollection guildServices, CommandService guildModules)
         {
-            var config = InitCommandConfigs.ContainsKey(socketGuild.Id) ? InitCommandConfigs[socketGuild.Id] : Config.DefaultGuildCommandConfig.Build();
+            var config = CommandConfigs.ContainsKey(socketGuild.Id) ? CommandConfigs[socketGuild.Id] : Config.DefaultGuildCommandConfig.Build();
             var builder = new CommandConfigBuilder(config)
             {
                 Id = socketGuild.Id,
@@ -206,7 +220,7 @@ namespace DiscordBot.Core
 
         private void AddCommandHandler(IDMChannel channel, ServiceCollection dmServices, CommandService dmModules)
         {
-            var config = InitCommandConfigs.ContainsKey(channel.Recipient.Id) ? InitCommandConfigs[channel.Recipient.Id] : Config.DefaultUserCommandConfig.Build();
+            var config = CommandConfigs.ContainsKey(channel.Recipient.Id) ? CommandConfigs[channel.Recipient.Id] : Config.DefaultUserCommandConfig.Build();
             var builder = new CommandConfigBuilder(config)
             {
                 Id = channel.Recipient.Id,
@@ -219,9 +233,12 @@ namespace DiscordBot.Core
         private void AddCommandHandler(CommandConfig config, ServiceCollection services, CommandService modules)
         {
             CommandHandler handler = new CommandHandler(_discord, services.BuildServiceProvider(), modules, config);
-            handler.ConfigUpdated += OnCommandConfigsValueUpdated;
+            if (ConfigsProvider != null)
+            {
+                handler.ConfigUpdated += ConfigsProvider.UpdateCommandConfig;
+                ConfigsProvider.CreateCommandConfig(handler.Config);
+            }
             AddCommandHandler(handler);
-            CommandConfigCreated?.Invoke(handler.Config.Id, handler.Config);
             RaiseLog(LogSeverity.Info, $"Command handler created {handler.Config.Source.ToString().ToLower()} {handler.Config.Name}");
         }
 
