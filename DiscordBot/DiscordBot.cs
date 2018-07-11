@@ -12,7 +12,7 @@ namespace DiscordBot.Core
 {
     public class DiscordBot : LogEntity
     {
-        private DiscordSocketClient _discord;
+        private readonly DiscordSocketClient _discord;
 
         private readonly List<Packet> _packets;
         private readonly string _token;
@@ -24,14 +24,13 @@ namespace DiscordBot.Core
 
         public event Action<ulong, CommandConfig> CommandConfigUpdated;
 
-        public readonly Dictionary<ulong, CommandConfig> InitCommandConfigs = new Dictionary<ulong, CommandConfig>();
-
         public BotConfig Config { get; }
+        public Dictionary<ulong, CommandConfig> InitCommandConfigs { get; } = new Dictionary<ulong, CommandConfig>();
 
         public DiscordBot(BotConfig config, IDictionary<ulong, CommandConfig> initCommandConfigs, ICollection<Packet> packets) : this(config, packets)
         {
             ThrowArgumentExceptionIfNull(initCommandConfigs);
-            InitCommandConfigs = new NotifyDictonary<ulong, CommandConfig>(initCommandConfigs);
+            InitCommandConfigs = new Dictionary<ulong, CommandConfig>(initCommandConfigs);
         }
 
         public DiscordBot(BotConfig config, ICollection<Packet> packets)
@@ -47,7 +46,7 @@ namespace DiscordBot.Core
             InitCommandsHandler();
         }
 
-        private void UpdateCommandHandlerConfig(ulong id, CommandConfig config)
+        public void UpdateCommandHandlerConfig(ulong id, CommandConfig config)
         {
             if (_commandHandlers.ContainsKey(id))
             {
@@ -121,8 +120,9 @@ namespace DiscordBot.Core
 
         private Task RemoveDMCommandHandler(SocketChannel arg)
         {
-            if (arg is IDMChannel channel)
+            if (DMCommandHandlerExsist(arg))
             {
+                var channel = arg as IDMChannel;
                 RemoveCommandHandler(channel.Recipient.Id);
             }
             return Task.CompletedTask;
@@ -130,14 +130,24 @@ namespace DiscordBot.Core
 
         private Task AddDMCommandHandler(SocketChannel arg)
         {
-            if (arg is IDMChannel channel)
+            if (DMCommandHandlerExsist(arg))
             {
-                if (!_commandHandlers.ContainsKey(channel.Recipient.Id))
-                {
-                    AddCommandHandler(CommandSource.User, arg);
-                }              
-            }       
+                AddCommandHandler(CommandSource.User, arg);
+            }
             return Task.CompletedTask;
+        }
+
+        private bool DMCommandHandlerExsist(SocketChannel arg)
+        {
+            if (arg is IDMChannel)
+            {
+                var channel = arg as IDMChannel;
+                if (_commandHandlers.ContainsKey(channel.Recipient.Id))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private Task RemoveCommandHandler(SocketGuild arg)
@@ -241,8 +251,9 @@ namespace DiscordBot.Core
 
         private Task HandleMessage(SocketMessage arg)
         {
-            if (arg is SocketUserMessage msg)
+            if (arg is SocketUserMessage)
             {
+                var msg = arg as SocketUserMessage;
                 var context = new SocketCommandContext(_discord, msg);
                 if (context.Guild != null)
                 {

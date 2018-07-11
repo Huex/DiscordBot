@@ -25,9 +25,15 @@ namespace DiscordBot.Core
             set
             {
                 _config = value;
-                ConfigUpdated?.Invoke(_config.Id, _config);
+                RaiseConfiUpdatedEvent();
                 UpdateCommandsAsync(Config).ConfigureAwait(true);
             }
+        }
+
+        private void RaiseConfiUpdatedEvent()
+        {
+            RaiseLog(LogSeverity.Debug, $"Command config updated {Config.Source.ToString().ToLower()} {Config.Name}");
+            ConfigUpdated?.Invoke(_config.Id, _config);
         }
 
         private async Task UpdateCommandsAsync(CommandConfig config)
@@ -62,7 +68,7 @@ namespace DiscordBot.Core
 
         public async Task HandleMessage(SocketMessage message)
         {
-            await HandleCommand(message as SocketUserMessage);
+            await HandleCommand(message as SocketUserMessage).ConfigureAwait(true);
         }
 
         private async Task HandleCommand(SocketUserMessage msg)
@@ -72,7 +78,7 @@ namespace DiscordBot.Core
                 int prefixInt = Config.Prefix.Length - 1;
                 if (msg.HasStringPrefix(Config.Prefix, ref prefixInt) || msg.HasMentionPrefix(_discord.CurrentUser, ref prefixInt))
                 {
-                    await ProcessCommandAsync(prefixInt, msg);
+                    await ProcessCommandAsync(prefixInt, msg).ConfigureAwait(true);
                 }
             }
         }
@@ -85,13 +91,13 @@ namespace DiscordBot.Core
             if (!result.IsSuccess)
             {
                 await message.Channel.SendMessageAsync(result.ErrorReason);
-                await Task.Delay(500);
+                await Task.Delay(500).ConfigureAwait(true);
                 await message.AddReactionAsync(new Discord.Emoji("⁉"));
 
             }
             else
             {
-                await Task.Delay(500);
+                await Task.Delay(500).ConfigureAwait(true);
                 await message.AddReactionAsync(new Discord.Emoji("✅"));
             }
         }

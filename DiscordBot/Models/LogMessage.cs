@@ -12,13 +12,15 @@ namespace DiscordBot
             Exception = logMessage.Exception;
         }
 
-        public LogMessage(LogSeverity severity, string source, string message, Exception exception = null)
+        public LogMessage(LogSeverity severity, string source, string message, Exception exception)
         {
             Severity = severity;
             Source = source;
             Message = message;
             Exception = exception;
         }
+
+        public LogMessage(LogSeverity severity, string source, string message) : this(severity, source, message, null) { }
 
         public LogSeverity Severity { get; }
         public string Source { get; }

@@ -61,7 +61,7 @@ namespace DiscordBot.Jill
             });
             _bot.Log += Log;
             await _bot.StartAsync();
-            await Task.Delay(-1);
+            await Task.Delay(-1).ConfigureAwait(true);
         }
     }
 }

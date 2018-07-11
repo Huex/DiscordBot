@@ -12,11 +12,13 @@ namespace DiscordBot.Utils
     /// </summary>
     public class IgnoreParentPropertiesResolver : DefaultContractResolver
     {
-        public readonly bool IgnoreBase;
         public IgnoreParentPropertiesResolver(bool ignoreBase)
         {
             IgnoreBase = ignoreBase;
         }
+
+        public bool IgnoreBase { get; }
+
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
             var allProps = base.CreateProperties(type, memberSerialization);
