@@ -156,7 +156,10 @@ namespace DiscordBot.Core
 
         private Task AddCommandHandler(SocketGuild guild)
         {
-            AddCommandHandler(CommandSource.Guild, guild);
+            if (!_commandHandlers.ContainsKey(guild.Id))
+            {
+                AddCommandHandler(CommandSource.Guild, guild);
+            }          
             return Task.CompletedTask;
         }
 
@@ -180,7 +183,7 @@ namespace DiscordBot.Core
 
         private void AddCommandHandler(SocketGuild socketGuild, ServiceCollection guildServices, CommandService guildModules)
         {
-            var config = InitCommandConfigs.ContainsKey(socketGuild.Id) ? InitCommandConfigs[socketGuild.Id] : Config.DefaultUserCommandConfig.Build();
+            var config = InitCommandConfigs.ContainsKey(socketGuild.Id) ? InitCommandConfigs[socketGuild.Id] : Config.DefaultGuildCommandConfig.Build();
             var builder = new CommandConfigBuilder(config)
             {
                 Id = socketGuild.Id,
@@ -204,16 +207,16 @@ namespace DiscordBot.Core
 
         private void AddCommandHandler(CommandConfig config, ServiceCollection services, CommandService modules)
         {
-            var handler = new CommandHandler(_discord, services.BuildServiceProvider(), modules, config);
+            CommandHandler handler = new CommandHandler(_discord, services.BuildServiceProvider(), modules, config);
             handler.ConfigUpdated += OnCommandConfigsValueUpdated;
             AddCommandHandler(handler);
+            RaiseLog(LogSeverity.Info, $"Command handler created {handler.Config.Source.ToString().ToLower()} {handler.Config.Name}");
         }
 
         private void AddCommandHandler(CommandHandler handler)
         {
             handler.Log += RaiseLogAsync;
             _commandHandlers.Add(handler.Config.Id, handler);
-            RaiseLog(LogSeverity.Debug, $"Command handler added, id user/guild = {handler.Config.Id}");
         }
 
         private void ExtractCommandsData(Packet packet)
@@ -252,43 +255,6 @@ namespace DiscordBot.Core
             }
             return Task.CompletedTask;
         }
-
-
-
-        //private readonly Collection<Type> _avalaibleModules = new Collection<Type>
-        //{
-        //    typeof(SettingsModule)
-        //};
-
-        //private readonly Collection<Type> _defaultGuildModules = new Collection<Type>
-        //{
-        //    typeof(SettingsModule)
-        //};
-
-        //private static string GetNameFromModule(Type module)
-        //{
-        //    var attributes = new List<CustomAttributeData>(module.GetCustomAttributesData());
-        //    var needed = attributes?.Find(p => p.AttributeType == typeof(NameAttribute));
-        //    return (string)needed?.ConstructorArguments[0].Value;
-        //}
-
-        //public static Collection<string> GetNamesOfModules(Collection<Type> modules)
-        //{
-        //    var modulesNames = new Collection<string>();
-        //    foreach (var module in modules)
-        //    {
-        //        if (module.IsSubclassOf(typeof(ModuleBase)))
-        //        {
-        //            modulesNames.Add(GetNameFromModule(module));
-        //        }
-        //    }
-        //    return modulesNames;
-        //}
-
-        //private GuildConfig GetDefaultGuildConfig(SocketGuild guild)
-        //{
-        //    return new GuildConfig(guild.Name,guild.Id, Prefix, guild.Owner.Id, $"{guild.Owner.Username}#{guild.Owner.Discriminator}", GetNamesOfModules(_defaultGuildModules));
-        //}
 
         private void SubscribeEventsHandlersByPacket(Packet packet)
         {
