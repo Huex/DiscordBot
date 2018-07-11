@@ -13,26 +13,26 @@ namespace DiscordBot.Services
         {
         }
 
-        internal void SetGuildPrefix(ulong id, string prefix)
-        {
-            CommandConfigBuilder config = new CommandConfigBuilder(ReadGuildConfig(id))
-            {
-                Prefix = prefix
-            };
-            RaiseLog(LogSeverity.Debug, "Write guild config to file");
-            WriteGuildConfig(config.Build());
-        }
+        //internal void SetGuildPrefix(ulong id, string prefix)
+        //{
+        //    CommandConfigBuilder config = new CommandConfigBuilder(ReadGuildConfig(id))
+        //    {
+        //        Prefix = prefix
+        //    };
+        //    RaiseLog(LogSeverity.Debug, "Write guild config to file");
+        //    WriteGuildConfig(config.Build());
+        //}
 
-        private void WriteGuildConfig(CommandConfig guildConfig)
-        {
-            _data.SetGuildConfig(guildConfig);
-            RaiseLog(LogSeverity.Info, $"Guild config are written id = {guildConfig.Id}");
-        }
+        //private void WriteGuildConfig(CommandConfig guildConfig)
+        //{
+        //    _data.SetGuildConfig(guildConfig);
+        //    RaiseLog(LogSeverity.Info, $"Guild config are written id = {guildConfig.Id}");
+        //}
 
-        private CommandConfig ReadGuildConfig(ulong id)
-        {
-            RaiseLog(LogSeverity.Debug, $"Read guild config id = {id}");
-            return _data.GetGuildConfig(id);
-        }
+        //private CommandConfig ReadGuildConfig(ulong id)
+        //{
+        //    RaiseLog(LogSeverity.Debug, $"Read guild config id = {id}");
+        //    return _data.GetGuildConfig(id);
+        //}
     }
 }
