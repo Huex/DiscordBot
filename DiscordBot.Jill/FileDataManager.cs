@@ -1,5 +1,7 @@
 ﻿using DiscordBot.Utils;
 using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
 
@@ -9,13 +11,13 @@ namespace DiscordBot.Jill
     {
         public static readonly Encoding TextEncoding = Encoding.UTF8;
         public static readonly string FILE_TYPE = "json";
-        private static readonly string GUILDS_PATH = "guilds/";
+        private static readonly string GUILDS_PATH = "commander/";
 
         private static string GetGuildPath(ulong guildId) => GUILDS_PATH + guildId + "." + FILE_TYPE;
 
-        internal static void WriteGuildConfig(CommandConfig guildConfig) => WriteGuildConfig(GetGuildPath(guildConfig.Id), guildConfig);
+        internal static void WriteGuildConfig(CommandConfig config) => WriteCommandConfig(GetGuildPath(config.Id), config);
 
-        internal static CommandConfig ReadGuildConfig(ulong guildId) => ReadGuildConfig(GetGuildPath(guildId));
+        internal static CommandConfig ReadCommandConfig(ulong id) => ReadCommanderConfig(GetGuildPath(id));
 
         internal static BotConfig ReadBotConfig(string path)
         {
@@ -27,14 +29,31 @@ namespace DiscordBot.Jill
             File.WriteAllText(path, JsonConvert.SerializeObject(botSettings, new JsonSerializerSettings { ContractResolver = new IgnoreParentPropertiesResolver(true)} ), TextEncoding);
         }
 
-        internal static void WriteGuildConfig(string path, CommandConfig guildConfig)
+        internal static void WriteCommandConfig(string path, CommandConfig config)
         {
-            File.WriteAllText(path, JsonConvert.SerializeObject(guildConfig), TextEncoding);
+            File.WriteAllText(path, JsonConvert.SerializeObject(config), TextEncoding);
         }
 
-        internal static CommandConfig ReadGuildConfig(string path)
+        internal static CommandConfig ReadCommanderConfig(string path)
         {
             return ((CommandConfigBuilder)JsonConvert.DeserializeObject(File.ReadAllText(path, TextEncoding), typeof(CommandConfigBuilder))).Build();
+        }
+
+        internal static Dictionary<ulong, CommandConfig> ReadAllCommandConfigs()
+        {
+            var commandsConfigs = new Dictionary<ulong, CommandConfig>();
+
+            var filesPaths = Directory.GetFiles(GUILDS_PATH);
+            foreach (var filePath in filesPaths)
+            {
+                var config = (CommandConfigBuilder)JsonConvert.DeserializeObject(File.ReadAllText(filePath, TextEncoding), typeof(CommandConfigBuilder));
+                if (config != null)
+                {
+                    commandsConfigs.TryAdd(config.Id, config.Build());
+                }
+            }
+            return commandsConfigs;
+
         }
 
 

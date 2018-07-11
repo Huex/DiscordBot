@@ -23,6 +23,7 @@ namespace DiscordBot.Core
         private readonly CommandService _dmModules = new CommandService();
 
         public event Action<ulong, CommandConfig> CommandConfigUpdated;
+        public event Action<ulong, CommandConfig> CommandConfigCreated;
 
         public BotConfig Config { get; }
         public Dictionary<ulong, CommandConfig> InitCommandConfigs { get; } = new Dictionary<ulong, CommandConfig>();
@@ -130,7 +131,7 @@ namespace DiscordBot.Core
 
         private Task AddDMCommandHandler(SocketChannel arg)
         {
-            if (DMCommandHandlerExsist(arg))
+            if (!DMCommandHandlerExsist(arg))
             {
                 AddCommandHandler(CommandSource.User, arg);
             }
@@ -220,6 +221,7 @@ namespace DiscordBot.Core
             CommandHandler handler = new CommandHandler(_discord, services.BuildServiceProvider(), modules, config);
             handler.ConfigUpdated += OnCommandConfigsValueUpdated;
             AddCommandHandler(handler);
+            CommandConfigCreated?.Invoke(handler.Config.Id, handler.Config);
             RaiseLog(LogSeverity.Info, $"Command handler created {handler.Config.Source.ToString().ToLower()} {handler.Config.Name}");
         }
 
