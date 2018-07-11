@@ -3,7 +3,7 @@ using DiscordBot.Services;
 
 namespace DiscordBot.Packets.Settings
 {
-    public class SettingsPacket : Packet
+    public class SettingsPacket : PacketBase
     {
         public SettingsPacket()
         {

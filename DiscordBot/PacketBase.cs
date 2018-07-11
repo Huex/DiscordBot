@@ -2,7 +2,7 @@
 
 namespace DiscordBot.Core
 {
-    public abstract class Packet : LogEntity
+    public abstract class PacketBase : LogEntity
     {
         public DiscordSocketClient Discord { get; private set; }
         public DiscordEventsHandlers EventsHandlers { get; } = new DiscordEventsHandlers();
