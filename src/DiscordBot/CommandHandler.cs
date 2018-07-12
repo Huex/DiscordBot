@@ -14,6 +14,7 @@ namespace DiscordBot.Core
         private readonly DiscordSocketClient _discord;
         private CommandConfig _config;
 
+        public event Action<ulong, CommandConfig> ConfigUpdated;
         public IServiceProvider Services { get; set; }
         public CommandService Commands { get; set; }
         public CommandConfig Config
@@ -54,8 +55,6 @@ namespace DiscordBot.Core
             var needed = attributes?.Find(p => p.AttributeType == typeof(NameAttribute));
             return (string)needed?.ConstructorArguments[0].Value;
         }
-
-        public event Action<ulong, CommandConfig> ConfigUpdated;
 
         public CommandHandler(DiscordSocketClient discord, IServiceProvider services, CommandService commands, CommandConfig config)
         {
