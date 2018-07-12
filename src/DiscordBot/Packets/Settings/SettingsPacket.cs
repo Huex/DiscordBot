@@ -7,8 +7,8 @@ namespace DiscordBot.Packets.Settings
     {
         public SettingsPacket()
         {
-            GuildCommands.Modules.Add(typeof(SettingsModule));
-            DMCommands.Modules.Add(typeof(SettingsModule));
+            DMModules.Add(typeof(SettingsModule));
+            GuildModules.Add(typeof(SettingsModule));
         }
     }
 }

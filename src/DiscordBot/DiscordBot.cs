@@ -18,8 +18,7 @@ namespace DiscordBot.Core
         private readonly List<PacketBase> _packets;
         private readonly string _token;
         private readonly Dictionary<ulong, CommandHandler> _commandHandlers = new Dictionary<ulong, CommandHandler>();
-        private readonly ServiceCollection _guildServices = new ServiceCollection();
-        private readonly ServiceCollection _dmServices = new ServiceCollection();
+        private readonly ServiceCollection _services = new ServiceCollection();
         private readonly CommandService _guildModules = new CommandService();
         private readonly CommandService _dmModules = new CommandService();
         private ICommandConfigsProvider _configsProvider;
@@ -206,10 +205,10 @@ namespace DiscordBot.Core
                 switch (source)
                 {
                     case CommandSource.User:
-                        AddCommandHandler(socket as IDMChannel, _dmServices, _dmModules);
+                        AddCommandHandler(socket as IDMChannel, _services, _dmModules);
                         break;
                     case CommandSource.Guild:
-                        AddCommandHandler(socket as SocketGuild, _guildServices, _guildModules);
+                        AddCommandHandler(socket as SocketGuild, _services, _guildModules);
                         break;
                     default:
                         break;
@@ -260,37 +259,32 @@ namespace DiscordBot.Core
 
         private void ExtractCommandsData(PacketBase packet)
         {
-            var pa = packet.GuildCommands.Services.BuildServiceProvider();
-            ServiceCollection sp = new ServiceCollection();
+            ExtractServices(packet.Services);
+            ExtractModules(packet.DMModules);
+            ExtractModules(packet.GuildModules);
+        }
 
-            foreach (var service in packet.GuildCommands.Services)
+        private void ExtractModules(Collection<Type> modules)
+        {
+            foreach (var module in modules)
+            {
+                if (module.IsSubclassOf(typeof(ModuleBase)))
+                {
+                    _dmModules.AddModuleAsync(module);
+                }        
+            }
+        }
+
+        private void ExtractServices(ServiceCollection services)
+        {
+            foreach (var service in services)
             {
                 if (service.ImplementationInstance is ServiceBase)
                 {
                     ((ServiceBase)service.ImplementationInstance).Log -= RaiseLogAsync;
                     ((ServiceBase)service.ImplementationInstance).Log += RaiseLogAsync;
                 }
-                _guildServices.Insert(_guildServices.Count, service);
-            }
-            foreach (var module in packet.GuildCommands.Modules)
-            {
-                _guildModules.AddModuleAsync(module);
-            }
-            foreach (var service in packet.DMCommands.Services)
-            {
-                if (service.ImplementationInstance is ServiceBase)
-                {
-                    if (!_guildServices.Contains(service))
-                    {
-                        ((ServiceBase)service.ImplementationInstance).Log -= RaiseLogAsync;
-                        ((ServiceBase)service.ImplementationInstance).Log += RaiseLogAsync;
-                    }
-                }
-                _dmServices.Insert(_dmServices.Count, service);
-            }
-            foreach (var module in packet.DMCommands.Modules)
-            {
-                _dmModules.AddModuleAsync(module);
+                _services.Insert(_services.Count, service);
             }
         }
 

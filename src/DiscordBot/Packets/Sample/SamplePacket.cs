@@ -12,10 +12,9 @@ namespace DiscordBot.Packets.Sample
         public SamplePacket()
         {
             SampleService myService = new SampleService();
-            this.GuildCommands.Services.AddSingleton(myService);
-            this.GuildCommands.Modules.Add(typeof(SampleModule));
-            this.DMCommands.Modules.Add(typeof(SampleModule));
-            this.DMCommands.Services.AddSingleton(myService);
+            Services.AddSingleton(myService);
+            GuildModules.Add(typeof(SampleModule));
+            DMModules.Add(typeof(SampleModule));
         }
     }
 }
