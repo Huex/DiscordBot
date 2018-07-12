@@ -11,9 +11,9 @@ namespace DiscordBot.Packets.Sample
     {
         public SamplePacket()
         {
-            SampleService myService = new SampleService();
-            Services.AddSingleton(myService);
-            GuildModules.Add(typeof(SampleModule));
+            SampleService myService = new SampleService(); // <- модулям будет передаваться именно этот объект, не измененный
+            Services.AddSingleton(myService);              // если myService нужно как-то конфигурировать, то делай это в этом классе, 
+            GuildModules.Add(typeof(SampleModule));        // или монжно еще выше по архитектурке, т.е. сюда в конструкторе передавать чото :^)
             DMModules.Add(typeof(SampleModule));
         }
     }

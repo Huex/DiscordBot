@@ -6,7 +6,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace DiscordBot.Packets.Sample
-{
+{   
+    /// <summary>
+    /// В модуле желательно описывать только взаимодествие с дискордом,
+    /// так как при выполнении команды, каждый раз создается новый экземпляр этого класса,
+    /// так устроен Discord.Net.Commands :^)
+    /// </summary>
     [Name("Sample")]
     public class SampleModule : ModuleBase
     {
