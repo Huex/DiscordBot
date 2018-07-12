@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using DiscordBot.Packets.Sample;
 
 namespace DiscordBot.Core
 {
@@ -259,9 +260,17 @@ namespace DiscordBot.Core
 
         private void ExtractCommandsData(PacketBase packet)
         {
+            var pa = packet.GuildCommands.Services.BuildServiceProvider();
+            ServiceCollection sp = new ServiceCollection();
+
             foreach (var service in packet.GuildCommands.Services)
             {
-                _guildServices.AddSingleton(service);
+                if (service.ImplementationInstance is ServiceBase)
+                {
+                    ((ServiceBase)service.ImplementationInstance).Log -= RaiseLogAsync;
+                    ((ServiceBase)service.ImplementationInstance).Log += RaiseLogAsync;
+                }
+                _guildServices.Insert(_guildServices.Count, service);
             }
             foreach (var module in packet.GuildCommands.Modules)
             {
@@ -269,7 +278,15 @@ namespace DiscordBot.Core
             }
             foreach (var service in packet.DMCommands.Services)
             {
-                _dmServices.AddSingleton(service);
+                if (service.ImplementationInstance is ServiceBase)
+                {
+                    if (!_guildServices.Contains(service))
+                    {
+                        ((ServiceBase)service.ImplementationInstance).Log -= RaiseLogAsync;
+                        ((ServiceBase)service.ImplementationInstance).Log += RaiseLogAsync;
+                    }
+                }
+                _dmServices.Insert(_dmServices.Count, service);
             }
             foreach (var module in packet.DMCommands.Modules)
             {
