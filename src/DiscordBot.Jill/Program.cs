@@ -1,11 +1,9 @@
 ﻿using DiscordBot.Core;
+using DiscordBot.Packets.Sample;
 using DiscordBot.Packets.Settings;
 using System;
 using System.Collections.ObjectModel;
-using System.Data;
-using System.IO;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace DiscordBot.Jill
 {
@@ -58,7 +56,8 @@ namespace DiscordBot.Jill
             //FileDataManager.WriteBotConfig("settings2.json", botSettings1);
             _bot = new Core.DiscordBot(botSettings, commandProvider, new Collection<PacketBase>
             {
-                new SettingsPacket()
+                new SettingsPacket(),
+                new SamplePacket()
             });
             _bot.Log += Log;
             await _bot.StartAsync();
