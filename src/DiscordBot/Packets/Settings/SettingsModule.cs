@@ -43,7 +43,6 @@ namespace DiscordBot.Packets.Settings
             Stopwatch sw = new Stopwatch();
             sw.Start();   
             var mes = await ReplyAsync($"ты пидор");
-//            await Context.Channel.GetMessageAsync(mes.Id);
             sw.Stop();
             await mes.ModifyAsync((p) =>
              {

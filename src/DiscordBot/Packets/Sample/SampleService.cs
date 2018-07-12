@@ -10,7 +10,7 @@ namespace DiscordBot.Packets.Sample
     {
         public void ToLog(string messgage)
         {
-            RaiseLog(new LogMessage(LogSeverity.Critical, this.GetType().Name, $"THIS IS VERY IMPORnATN: {messgage} !!!"));
+            RaiseLog(new LogMessage(LogSeverity.Critical, this.GetType().Name, $"THIS IS VERY IMPORTATN -> {messgage}"));
         }
 
         public void WriteToFile(string message)
