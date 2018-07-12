@@ -8,17 +8,11 @@
   "AlwaysDownloadUsers": false,
   "HandlerTimeout": 3000,
   "DefaultUserCommandConfig": {
-    "Source": 0,
-    "Name": "user name",
-    "Id": 0,
     "Prefix": "hx!",
     "Modules": [
     ]
   },
   "DefaultGuildCommandConfig": {
-    "Source": 0,
-    "Name": "guild name",
-    "Id": 0,
     "Prefix": "hx!",
     "Modules": [
       "Settings"
