@@ -17,22 +17,26 @@ namespace DiscordBot.Packets.Sample
             GuildModules.Add(typeof(SampleModule));        // или монжно еще выше по архитектурке, т.е. сюда в конструкторе передавать чото :^)
             DMModules.Add(typeof(SampleModule));
 
-            Initialized += SubscribeOnDiscordEvents;// во время создания this обьекта Discord еще не существует, 
-                                                           // он создается когда DiscordBot проделает все манипуляции и передаст его методом PacketBase.InitPacket
-                                                           // я еще не понял как можно по другому *thinkong*
+            Initialized += SubscribeOnDiscordEvents;        // во время создания this обьекта Discord еще не существует, 
+            Initialized += ShowCommandConfigs;              // он создается когда DiscordBot проделает все манипуляции и передаст его методом PacketBase.InitPacket
+                                                            // я еще не понял как можно по другому *thinkong*
+        }
+
+        private void ShowCommandConfigs()
+        {
+            string configs = "";
+
+            foreach (var config in ConfigsProvider.Configs)
+            {
+                configs += config.Name + " ";
+            }
+
+            RaiseLog(new LogMessage(LogSeverity.Critical, "Я ИЗ ЧЕЧНИ", $"Есть такие конфиги: {configs}"));
         }
 
         private Task Discord_Ready()
         {
             RaiseLog(new LogMessage(LogSeverity.Critical, "Я ИЗ ЧЕЧНИ", "ДАРОВА))"));
-            string configs = "";
-
-            foreach(var config in ConfigsProvider.Configs)
-            {
-                configs += config.Name + " ";
-            }
-
-            RaiseLog(new LogMessage(LogSeverity.Critical, "Я ТОЖЕ ИЗ ЧЕЧНИ", $"Есть такие конфиги: {configs}"));
             return Task.CompletedTask;
         }
 
