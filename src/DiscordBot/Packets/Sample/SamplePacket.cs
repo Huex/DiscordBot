@@ -26,7 +26,7 @@ namespace DiscordBot.Packets.Sample
         private Task ShowCommandConfigs()
         {
             string configs = "";
-            foreach (var config in ConfigsProvider.Configs)
+            foreach (var config in CommandConfigsProvider.Configs)
             {
                 configs += config.Name + " ";
             }

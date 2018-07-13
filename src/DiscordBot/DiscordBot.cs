@@ -141,11 +141,20 @@ namespace DiscordBot.Core
             foreach (var packet in _packets)
             {
                 packet.Log += RaiseLogAsync;
-                packet.InitPacket(_discord, this);
+                packet.InitPacket(Config, _discord, this);
             }
         }
 
         private void InitCommandsHandler()
+        {
+            SubscribeCommandHandlerOnDiscordEvents();
+            foreach (var packet in _packets)
+            {
+                ExtractCommandsData(packet);
+            }
+        }
+
+        private void SubscribeCommandHandlerOnDiscordEvents()
         {
             _discord.GuildAvailable += AddCommandHandler;
             _discord.Ready += AddDMCommandHandlersAsync;
@@ -154,10 +163,6 @@ namespace DiscordBot.Core
             _discord.MessageReceived += HandleMessage;
             _discord.ChannelCreated += AddDMCommandHandler;
             _discord.ChannelDestroyed += RemoveDMCommandHandler;
-            foreach (var packet in _packets)
-            {
-                ExtractCommandsData(packet);
-            }
         }
 
         private async Task AddDMCommandHandlersAsync()

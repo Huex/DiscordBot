@@ -7,7 +7,8 @@ namespace DiscordBot.Core
     public abstract class PacketBase : LogEntity
     {
         public IPublicDiscordClient Discord { get; private set; }
-        public ICommandConfigsModOnlyProvider ConfigsProvider { get; private set; }
+        public ICommandConfigsModOnlyProvider CommandConfigsProvider { get; private set; }
+        public BotConfig BotConfig { get; private set; }
         public bool DiscordIsInitialized { get; private set; } = false;
 
         public event Action Initialized;
@@ -16,10 +17,11 @@ namespace DiscordBot.Core
         public Collection<Type> GuildModules { get; set; } = new Collection<Type>();
         public Collection<Type> DMModules { get; set; } = new Collection<Type>();
 
-        internal void InitPacket(DiscordClient discord, ICommandConfigsModOnlyProvider configsProvider)
+        internal void InitPacket(BotConfig config, DiscordClient discord, ICommandConfigsModOnlyProvider commanderConfigsProvider)
         {
             Discord = discord;
-            ConfigsProvider = configsProvider;
+            CommandConfigsProvider = commanderConfigsProvider;
+            BotConfig = config;
             DiscordIsInitialized = true;
             Initialized?.Invoke();
         }
