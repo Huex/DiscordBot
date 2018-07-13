@@ -1,15 +1,8 @@
-﻿using Discord;
-using Discord.Rest;
-using Discord.WebSocket;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Discord.WebSocket;
 
 namespace DiscordBot
 {
-    public class DiscordClient : DiscordSocketClient, IPublicDiscordSocket
+    public class DiscordClient : DiscordSocketClient, IPublicDiscordClient
     {
         public DiscordClient() : base() { }
         public DiscordClient(DiscordSocketConfig config) : base(config) { }

@@ -6,7 +6,7 @@ namespace DiscordBot.Core
 {
     public abstract class PacketBase : LogEntity
     {
-        public IPublicDiscordSocket Discord { get; private set; }
+        public IPublicDiscordClient Discord { get; private set; }
         private Action<ulong, CommandConfig> _updateCommandConfig;
         private Func<ulong, CommandConfig> _getCommandConfig;
 
@@ -70,7 +70,7 @@ namespace DiscordBot.Core
         public Collection<Type> GuildModules { get; set; } = new Collection<Type>();
         public Collection<Type> DMModules { get; set; } = new Collection<Type>();
 
-        private void SetDiscordSocket(IPublicDiscordSocket discord)
+        private void SetDiscordSocket(IPublicDiscordClient discord)
         {
             Discord = discord;
         }

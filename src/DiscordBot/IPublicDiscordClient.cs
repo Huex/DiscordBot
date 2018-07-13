@@ -8,7 +8,7 @@ using Discord.WebSocket;
 
 namespace DiscordBot
 {
-    public interface IPublicDiscordSocket
+    public interface IPublicDiscordClient
     {
         IReadOnlyCollection<RestVoiceRegion> VoiceRegions { get; }
         IReadOnlyCollection<SocketGroupChannel> GroupChannels { get; }
