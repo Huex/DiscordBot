@@ -128,8 +128,8 @@ namespace DiscordBot.Core
             foreach (var packet in _packets)
             {
                 packet.Log += RaiseLogAsync;
-                packet.InitPacket((DiscordClient)_discord, UpdateCommandConfig, GetCommandConfig, CommandConfigExsist);
-                SubscribeEventsHandlersByPacket(packet);
+                packet.InitPacket(_discord, UpdateCommandConfig, GetCommandConfig, CommandConfigExsist);
+                //SubscribeEventsHandlersByPacket(packet);
             }
         }
 
@@ -320,42 +320,42 @@ namespace DiscordBot.Core
             return Task.CompletedTask;
         }
 
-        private void SubscribeEventsHandlersByPacket(PacketBase packet)
-        {
-            //_discord.ChannelCreated += packet.ChannelCreated;
-            //_discord.ChannelDestroyed += packet.ChannelDestroyed;
-            //_discord.ChannelUpdated += packet.ChannelUpdated;
-            //_discord.Connected += packet.Connected;
-            //_discord.CurrentUserUpdated += packet.CurrentUserUpdated;
-            //_discord.Disconnected += packet.Disconnected;
-            //_discord.GuildAvailable += packet.GuildAvailable;
-            //_discord.GuildMembersDownloaded += packet.GuildMembersDownloaded;
-            //_discord.GuildMemberUpdated += packet.GuildMemberUpdated;
-            //_discord.GuildUnavailable += packet.GuildUnavailable;
-            //_discord.GuildUpdated += packet.GuildUpdated;
-            //_discord.JoinedGuild += packet.JoinedGuild;
-            //_discord.LeftGuild += packet.LeftGuild;
-            //_discord.LoggedIn += packet.LoggedIn;
-            //_discord.LoggedOut += packet.LoggedOut;
-            //_discord.MessageUpdated += packet.MessageUpdated;
-            //_discord.MessageReceived += packet.MessageReceived;
-            //_discord.ReactionAdded += packet.ReactionAdded;
-            //_discord.ReactionRemoved += packet.ReactionRemoved;
-            //_discord.ReactionsCleared += packet.ReactionsCleared;
-            //_discord.Ready += packet.Ready;
-            //_discord.RecipientAdded += packet.RecipientAdded;
-            //_discord.RecipientRemoved += packet.RecipientRemoved;
-            //_discord.RoleCreated += packet.RoleCreated;
-            //_discord.RoleDeleted += packet.RoleDeleted;
-            //_discord.RoleUpdated += packet.RoleUpdated;
-            //_discord.UserBanned += packet.UserBanned;
-            //_discord.UserIsTyping += packet.UserIsTyping;
-            //_discord.UserJoined += packet.UserJoined;
-            //_discord.UserLeft += packet.UserLeft;
-            //_discord.UserUnbanned += packet.UserUnbanned;
-            //_discord.UserUpdated += packet.UserUpdated;
-            //_discord.UserVoiceStateUpdated += packet.UserVoiceStateUpdated;
-            //_discord.MessageDeleted += packet.MessageDeleted;
-        }
+        //private void SubscribeEventsHandlersByPacket(PacketBase packet)
+        //{
+        //    _discord.ChannelCreated += packet.ChannelCreated;
+        //    _discord.ChannelDestroyed += packet.ChannelDestroyed;
+        //    _discord.ChannelUpdated += packet.ChannelUpdated;
+        //    _discord.Connected += packet.Connected;
+        //    _discord.CurrentUserUpdated += packet.CurrentUserUpdated;
+        //    _discord.Disconnected += packet.Disconnected;
+        //    _discord.GuildAvailable += packet.GuildAvailable;
+        //    _discord.GuildMembersDownloaded += packet.GuildMembersDownloaded;
+        //    _discord.GuildMemberUpdated += packet.GuildMemberUpdated;
+        //    _discord.GuildUnavailable += packet.GuildUnavailable;
+        //    _discord.GuildUpdated += packet.GuildUpdated;
+        //    _discord.JoinedGuild += packet.JoinedGuild;
+        //    _discord.LeftGuild += packet.LeftGuild;
+        //    _discord.LoggedIn += packet.LoggedIn;
+        //    _discord.LoggedOut += packet.LoggedOut;
+        //    _discord.MessageUpdated += packet.MessageUpdated;
+        //    _discord.MessageReceived += packet.MessageReceived;
+        //    _discord.ReactionAdded += packet.ReactionAdded;
+        //    _discord.ReactionRemoved += packet.ReactionRemoved;
+        //    _discord.ReactionsCleared += packet.ReactionsCleared;
+        //    _discord.Ready += packet.Ready;
+        //    _discord.RecipientAdded += packet.RecipientAdded;
+        //    _discord.RecipientRemoved += packet.RecipientRemoved;
+        //    _discord.RoleCreated += packet.RoleCreated;
+        //    _discord.RoleDeleted += packet.RoleDeleted;
+        //    _discord.RoleUpdated += packet.RoleUpdated;
+        //    _discord.UserBanned += packet.UserBanned;
+        //    _discord.UserIsTyping += packet.UserIsTyping;
+        //    _discord.UserJoined += packet.UserJoined;
+        //    _discord.UserLeft += packet.UserLeft;
+        //    _discord.UserUnbanned += packet.UserUnbanned;
+        //    _discord.UserUpdated += packet.UserUpdated;
+        //    _discord.UserVoiceStateUpdated += packet.UserVoiceStateUpdated;
+        //    _discord.MessageDeleted += packet.MessageDeleted;
+        //}
     }
 }

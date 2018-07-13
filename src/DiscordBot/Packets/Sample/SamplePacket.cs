@@ -18,7 +18,7 @@ namespace DiscordBot.Packets.Sample
             DMModules.Add(typeof(SampleModule));
 
             DiscordInitialized += SubscribeOnDiscordEvents;// во время создания this обьекта Discord еще не существует, 
-                                                           // он создается когда бот проделает все манипуляции и передаст его методом this.InitPacket
+                                                           // он создается когда DiscordBot проделает все манипуляции и передаст его методом PacketBase.InitPacket
                                                            // я еще не понял как можно по другому *thinkong*
         }
 

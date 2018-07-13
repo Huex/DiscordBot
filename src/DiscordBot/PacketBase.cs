@@ -1,12 +1,6 @@
-﻿using Discord;
-using Discord.Rest;
-using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace DiscordBot.Core
 {
