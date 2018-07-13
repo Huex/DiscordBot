@@ -4,11 +4,8 @@ using System.Text;
 
 namespace DiscordBot
 {
-    public interface ICommandConfigsProvider
+    public interface ICommandConfigsProvider : ICommandConfigsModOnlyProvider
     {
-        void UpdateCommandConfig(ulong id, CommandConfig config);
-        void CreateCommandConfig(CommandConfig config);
-        CommandConfig? GetCommandConfigIfExsist(ulong id);
-        ICollection<CommandConfig> GetCommandConfigs();
+        void AddCommandConfig(CommandConfig config);
     }
 }

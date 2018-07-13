@@ -11,10 +11,9 @@ using DiscordBot.Packets.Sample;
 
 namespace DiscordBot.Core
 {
-    public class DiscordBot : LogEntity
+    public class DiscordBot : LogEntity, ICommandConfigsModOnlyProvider
     {
         private readonly DiscordClient _discord;
-
         private readonly List<PacketBase> _packets;
         private readonly string _token;
         private readonly Dictionary<ulong, CommandHandler> _commandHandlers = new Dictionary<ulong, CommandHandler>();
@@ -24,6 +23,7 @@ namespace DiscordBot.Core
         private ICommandConfigsProvider _configsProvider;
 
         public BotConfig Config { get; }
+
         public ICommandConfigsProvider ConfigsProvider
         {
             get
@@ -34,6 +34,27 @@ namespace DiscordBot.Core
             {
                 _configsProvider = value;
                 SubscribeCommandConfigsProviderOnChanges();
+            }
+        }
+
+        IReadOnlyCollection<CommandConfig> ICommandConfigsModOnlyProvider.Configs
+        {
+            get
+            {
+                var configs = new Collection<CommandConfig>();
+                foreach(var handler in _commandHandlers.Values)
+                {
+                    configs.Add(handler.Config);
+                }
+                return configs;
+            }
+        }
+
+        void ICommandConfigsModOnlyProvider.UpdateCommandConfig(ulong id, CommandConfig config) //доделать ексепшн
+        {
+            if (CommandConfigExsist(id))
+            {
+                _commandHandlers[id].Config = config;
             }
         }
 
@@ -74,14 +95,6 @@ namespace DiscordBot.Core
             await _discord.StartAsync();
         }
 
-        public void UpdateCommandConfig(ulong id, CommandConfig config) //доделать ексепшн
-        {
-            if (CommandConfigExsist(id))
-            {
-                _commandHandlers[id].Config = config;
-            }
-        }
-
         public CommandConfig GetCommandConfig(ulong id) //доделать ексепшн
         {
             if (CommandConfigExsist(id))
@@ -102,12 +115,12 @@ namespace DiscordBot.Core
             {
                 foreach (var handler in _commandHandlers)
                 {
-                    SubscribeCommandConfigsProviderOn(handler.Value);
+                    SubscribeCommandConfigsProviderOnChanges(handler.Value);
                 }
             }
         }
 
-        private void SubscribeCommandConfigsProviderOn(CommandHandler handler)
+        private void SubscribeCommandConfigsProviderOnChanges(CommandHandler handler)
         {
             if (ConfigsProvider != null)
             {
@@ -128,8 +141,7 @@ namespace DiscordBot.Core
             foreach (var packet in _packets)
             {
                 packet.Log += RaiseLogAsync;
-                packet.InitPacket(_discord, UpdateCommandConfig, GetCommandConfig, CommandConfigExsist);
-                //SubscribeEventsHandlersByPacket(packet);
+                packet.InitPacket(_discord, this);
             }
         }
 
@@ -218,11 +230,23 @@ namespace DiscordBot.Core
             {
                 switch (source)
                 {
-                    case CommandSource.User:
-                        AddCommandHandler(socket as IDMChannel, _services, _dmModules);
-                        break;
                     case CommandSource.Guild:
-                        AddCommandHandler(socket as SocketGuild, _services, _guildModules);
+                        var socketGuild = socket as SocketGuild;
+                        AddCommandHandler(new CommandConfigBuilder(GetCommandConfigFromProvider(CommandSource.Guild, socketGuild.Id))
+                        {
+                            Id = socketGuild.Id,
+                            Name = socketGuild.Name,
+                            Source = CommandSource.Guild
+                        }.Build(), _services, _guildModules);
+                        break;
+                    case CommandSource.User:
+                        var channel = socket as IDMChannel;
+                        AddCommandHandler(new CommandConfigBuilder(GetCommandConfigFromProvider(CommandSource.User, channel.Recipient.Id))
+                        {
+                            Id = channel.Recipient.Id,
+                            Name = channel.Recipient.Username,
+                            Source = CommandSource.User
+                        }.Build(), _services, _dmModules);
                         break;
                     default:
                         break;
@@ -230,38 +254,36 @@ namespace DiscordBot.Core
             }
         }
 
-        private void AddCommandHandler(SocketGuild socketGuild, ServiceCollection guildServices, CommandService guildModules)
+        private CommandConfig GetCommandConfigFromProvider(CommandSource source, ulong id)
         {
-            var config = ConfigsProvider?.GetCommandConfigIfExsist(socketGuild.Id);
-            config = config != null ? config : Config.DefaultGuildCommandConfig.Build();
-            var builder = new CommandConfigBuilder((CommandConfig)config)
+            CommandConfigBuilder res = null;
+            foreach(var config in ConfigsProvider.Configs)
             {
-                Id = socketGuild.Id,
-                Name = socketGuild.Name,
-                Source = CommandSource.Guild
-            };
-            AddCommandHandler(builder.Build(), guildServices, guildModules);
-        }
-
-        private void AddCommandHandler(IDMChannel channel, ServiceCollection dmServices, CommandService dmModules)
-        {
-            var config = ConfigsProvider?.GetCommandConfigIfExsist(channel.Recipient.Id);
-            config = config != null ? config : Config.DefaultUserCommandConfig.Build();
-            var builder = new CommandConfigBuilder((CommandConfig)config)
+                if(config.Id == id)
+                {
+                    res = new CommandConfigBuilder(config);
+                }
+            }
+            switch (source)
             {
-                Id = channel.Recipient.Id,
-                Name = channel.Recipient.Username,
-                Source = CommandSource.User
-            };
-            AddCommandHandler(builder.Build(), dmServices, dmModules);
+                case CommandSource.User:
+                    res = res ?? Config.DefaultUserCommandConfig;
+                    break;
+                case CommandSource.Guild:
+                    res = res ?? Config.DefaultGuildCommandConfig;
+                    break;
+                default:
+                    break;
+            }  
+            return res.Build();
         }
 
         private void AddCommandHandler(CommandConfig config, ServiceCollection services, CommandService modules)
         {
             CommandHandler handler = new CommandHandler(_discord, services.BuildServiceProvider(), modules, config);
             AddCommandHandler(handler);
-            SubscribeCommandConfigsProviderOn(handler);
-            ConfigsProvider?.CreateCommandConfig(handler.Config);
+            SubscribeCommandConfigsProviderOnChanges(handler);
+            ConfigsProvider?.AddCommandConfig(handler.Config);
             RaiseLog(LogSeverity.Info, $"Command handler created for {handler.Config.Source.ToString().ToLower()} {handler.Config.Name}");
         }
 
@@ -319,43 +341,5 @@ namespace DiscordBot.Core
             }
             return Task.CompletedTask;
         }
-
-        //private void SubscribeEventsHandlersByPacket(PacketBase packet)
-        //{
-        //    _discord.ChannelCreated += packet.ChannelCreated;
-        //    _discord.ChannelDestroyed += packet.ChannelDestroyed;
-        //    _discord.ChannelUpdated += packet.ChannelUpdated;
-        //    _discord.Connected += packet.Connected;
-        //    _discord.CurrentUserUpdated += packet.CurrentUserUpdated;
-        //    _discord.Disconnected += packet.Disconnected;
-        //    _discord.GuildAvailable += packet.GuildAvailable;
-        //    _discord.GuildMembersDownloaded += packet.GuildMembersDownloaded;
-        //    _discord.GuildMemberUpdated += packet.GuildMemberUpdated;
-        //    _discord.GuildUnavailable += packet.GuildUnavailable;
-        //    _discord.GuildUpdated += packet.GuildUpdated;
-        //    _discord.JoinedGuild += packet.JoinedGuild;
-        //    _discord.LeftGuild += packet.LeftGuild;
-        //    _discord.LoggedIn += packet.LoggedIn;
-        //    _discord.LoggedOut += packet.LoggedOut;
-        //    _discord.MessageUpdated += packet.MessageUpdated;
-        //    _discord.MessageReceived += packet.MessageReceived;
-        //    _discord.ReactionAdded += packet.ReactionAdded;
-        //    _discord.ReactionRemoved += packet.ReactionRemoved;
-        //    _discord.ReactionsCleared += packet.ReactionsCleared;
-        //    _discord.Ready += packet.Ready;
-        //    _discord.RecipientAdded += packet.RecipientAdded;
-        //    _discord.RecipientRemoved += packet.RecipientRemoved;
-        //    _discord.RoleCreated += packet.RoleCreated;
-        //    _discord.RoleDeleted += packet.RoleDeleted;
-        //    _discord.RoleUpdated += packet.RoleUpdated;
-        //    _discord.UserBanned += packet.UserBanned;
-        //    _discord.UserIsTyping += packet.UserIsTyping;
-        //    _discord.UserJoined += packet.UserJoined;
-        //    _discord.UserLeft += packet.UserLeft;
-        //    _discord.UserUnbanned += packet.UserUnbanned;
-        //    _discord.UserUpdated += packet.UserUpdated;
-        //    _discord.UserVoiceStateUpdated += packet.UserVoiceStateUpdated;
-        //    _discord.MessageDeleted += packet.MessageDeleted;
-        //}
     }
 }

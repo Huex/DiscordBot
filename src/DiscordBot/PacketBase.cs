@@ -7,11 +7,22 @@ namespace DiscordBot.Core
     public abstract class PacketBase : LogEntity
     {
         public IPublicDiscordClient Discord { get; private set; }
-        private Action<ulong, CommandConfig> _updateCommandConfig;
-        private Func<ulong, CommandConfig> _getCommandConfig;
-
-        public event Action DiscordInitialized;
+        public ICommandConfigsModOnlyProvider ConfigsProvider { get; private set; }
         public bool DiscordIsInitialized { get; private set; } = false;
+
+        public event Action Initialized;
+
+        public ServiceCollection Services { get; set; } = new ServiceCollection();
+        public Collection<Type> GuildModules { get; set; } = new Collection<Type>();
+        public Collection<Type> DMModules { get; set; } = new Collection<Type>();
+
+        internal void InitPacket(DiscordClient discord, ICommandConfigsModOnlyProvider configsProvider)
+        {
+            Discord = discord;
+            ConfigsProvider = configsProvider;
+            DiscordIsInitialized = true;
+            Initialized?.Invoke();
+        }
 
         //public SocketChannel GetChannel(ulong id) => _discord.GetChannel(id);
         //public SocketGuild GetGuild(ulong id) => _discord.GetGuild(id);
@@ -65,29 +76,5 @@ namespace DiscordBot.Core
         //public Func<SocketUser, SocketGuild, Task> UserUnbanned { get; set; } = new Func<SocketUser, SocketGuild, Task>((a, b) => Task.CompletedTask);
         //public Func<SocketUser, SocketUser, Task> UserUpdated { get; set; } = new Func<SocketUser, SocketUser, Task>((a, b) => Task.CompletedTask);
         //public Func<SocketUser, SocketVoiceState, SocketVoiceState, Task> UserVoiceStateUpdated { get; set; } = new Func<SocketUser, SocketVoiceState, SocketVoiceState, Task>((a, b, c) => Task.CompletedTask);
-
-        public ServiceCollection Services { get; set; } = new ServiceCollection();
-        public Collection<Type> GuildModules { get; set; } = new Collection<Type>();
-        public Collection<Type> DMModules { get; set; } = new Collection<Type>();
-
-        private void SetDiscordSocket(IPublicDiscordClient discord)
-        {
-            Discord = discord;
-        }
-
-        private void SetCommandConfigMethods(Action<ulong, CommandConfig> updateCommandConfig, Func<ulong, CommandConfig> getCommandConfig, Func<ulong, bool> commandConfigExsist)
-        {
-            _updateCommandConfig = updateCommandConfig;
-            _getCommandConfig = getCommandConfig;
-        }
-
-        internal void InitPacket(DiscordClient discord, Action<ulong, CommandConfig> updateCommandConfig, Func<ulong, 
-            CommandConfig> getCommandConfig, Func<ulong, bool> commandConfigExsist)
-        {
-            SetDiscordSocket(discord);
-            SetCommandConfigMethods(updateCommandConfig, getCommandConfig, commandConfigExsist);
-            DiscordIsInitialized = true;
-            DiscordInitialized?.Invoke();
-        }
     }
 }

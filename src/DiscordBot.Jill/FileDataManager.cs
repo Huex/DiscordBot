@@ -13,6 +13,8 @@ namespace DiscordBot.Jill
         public static readonly string FILE_TYPE = "json";
         private static readonly string GUILDS_PATH = "commander/";
 
+        IReadOnlyCollection<CommandConfig> ICommandConfigsModOnlyProvider.Configs => ReadAllCommandConfigs();
+
         private static string GetGuildPath(ulong guildId) => GUILDS_PATH + guildId + "." + FILE_TYPE;
 
         internal static void WriteCommandConfig(CommandConfig config) => WriteCommandConfig(GetGuildPath(config.Id), config);
@@ -56,33 +58,14 @@ namespace DiscordBot.Jill
 
         }
 
-        void ICommandConfigsProvider.UpdateCommandConfig(ulong id, CommandConfig config)
+        void ICommandConfigsProvider.AddCommandConfig(CommandConfig config)
         {
             WriteCommandConfig(config);
         }
 
-        void ICommandConfigsProvider.CreateCommandConfig(CommandConfig config)
+        void ICommandConfigsModOnlyProvider.UpdateCommandConfig(ulong id, CommandConfig config)
         {
             WriteCommandConfig(config);
-        }
-
-        ICollection<CommandConfig> ICommandConfigsProvider.GetCommandConfigs()
-        {
-            return ReadAllCommandConfigs();
-        }
-
-        CommandConfig? ICommandConfigsProvider.GetCommandConfigIfExsist(ulong id)
-        {
-            var filesPaths = Directory.GetFiles(GUILDS_PATH);
-            foreach (var filePath in filesPaths)
-            {
-                if (filePath.Contains($"{id}.{FILE_TYPE}"))
-                {
-                    var config = (CommandConfigBuilder)JsonConvert.DeserializeObject(File.ReadAllText(filePath, TextEncoding), typeof(CommandConfigBuilder));
-                    return config.Build();
-                }
-            }
-            return null;
         }
 
 
