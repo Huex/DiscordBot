@@ -18,20 +18,20 @@ namespace DiscordBot.Packets.Sample
             DMModules.Add(typeof(SampleModule));
 
             Initialized += SubscribeOnDiscordEvents;        // во время создания this обьекта Discord еще не существует, 
-            Initialized += ShowCommandConfigs;              // он создается когда DiscordBot проделает все манипуляции и передаст его методом PacketBase.InitPacket
+                                                            // он создается когда DiscordBot проделает все манипуляции и передаст его методом PacketBase.InitPacket
                                                             // я еще не понял как можно по другому *thinkong*
+                                                            // так же и передается ConfigsProvider, пока Discord не будет рэди, комманд конфиги серверов, будут пустыми (точнее Counts = 0)
         }
 
-        private void ShowCommandConfigs()
+        private Task ShowCommandConfigs()
         {
             string configs = "";
-
             foreach (var config in ConfigsProvider.Configs)
             {
                 configs += config.Name + " ";
             }
-
             RaiseLog(new LogMessage(LogSeverity.Critical, "Я ИЗ ЧЕЧНИ", $"Есть такие конфиги: {configs}"));
+            return Task.CompletedTask;
         }
 
         private Task Discord_Ready()
@@ -42,7 +42,8 @@ namespace DiscordBot.Packets.Sample
 
         private void SubscribeOnDiscordEvents()
         {
-            Discord.Ready += Discord_Ready;          
+            Discord.Ready += Discord_Ready;
+            Discord.Ready += ShowCommandConfigs;
         }
     }
 }
