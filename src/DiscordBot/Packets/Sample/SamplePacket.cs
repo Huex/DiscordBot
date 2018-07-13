@@ -17,7 +17,9 @@ namespace DiscordBot.Packets.Sample
             GuildModules.Add(typeof(SampleModule));        // или монжно еще выше по архитектурке, т.е. сюда в конструкторе передавать чото :^)
             DMModules.Add(typeof(SampleModule));
 
-            DiscordInitialized += SubscribeOnDiscordEvents;
+            DiscordInitialized += SubscribeOnDiscordEvents;// во время создания this обьекта Discord еще не существует, 
+                                                           // он создается когда бот проделает все манипуляции и передаст его методом this.InitPacket
+                                                           // я еще не понял как можно по другому *thinkong*
         }
 
         private Task Discord_Ready()
@@ -28,7 +30,7 @@ namespace DiscordBot.Packets.Sample
 
         private void SubscribeOnDiscordEvents()
         {
-            Discord.Ready += Discord_Ready;
+            Discord.Ready += Discord_Ready;          
         }
     }
 }
