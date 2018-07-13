@@ -13,7 +13,7 @@ namespace DiscordBot.Core
 {
     public class DiscordBot : LogEntity
     {
-        private readonly DiscordSocketClient _discord;
+        private readonly DiscordClient _discord;
 
         private readonly List<PacketBase> _packets;
         private readonly string _token;
@@ -49,7 +49,7 @@ namespace DiscordBot.Core
             _token = config.Token;
             config.Token = "";
             Config = config;
-            _discord = new DiscordSocketClient(Config.DiscordSocket);
+            _discord = new DiscordClient(Config.DiscordSocket);
             _packets = new List<PacketBase>(packets);
             _discord.Log += RaiseLogAsync;
             InitPackets();
@@ -74,12 +74,26 @@ namespace DiscordBot.Core
             await _discord.StartAsync();
         }
 
-        public void UpdateCommandConfig(ulong id, CommandConfig config)
+        public void UpdateCommandConfig(ulong id, CommandConfig config) //доделать ексепшн
         {
-            if (_commandHandlers.ContainsKey(id))
+            if (CommandConfigExsist(id))
             {
                 _commandHandlers[id].Config = config;
             }
+        }
+
+        public CommandConfig GetCommandConfig(ulong id) //доделать ексепшн
+        {
+            if (CommandConfigExsist(id))
+            {
+                return _commandHandlers[id].Config;
+            }
+            throw new Exception();
+        }
+
+        public bool CommandConfigExsist(ulong id)
+        {
+            return _commandHandlers.ContainsKey(id);
         }
 
         private void SubscribeCommandConfigsProviderOnChanges()
@@ -114,7 +128,7 @@ namespace DiscordBot.Core
             foreach (var packet in _packets)
             {
                 packet.Log += RaiseLogAsync;
-                packet.SetDiscordSocket(_discord);
+                packet.InitPacket((DiscordClient)_discord, UpdateCommandConfig, GetCommandConfig, CommandConfigExsist);
                 SubscribeEventsHandlersByPacket(packet);
             }
         }
@@ -308,40 +322,40 @@ namespace DiscordBot.Core
 
         private void SubscribeEventsHandlersByPacket(PacketBase packet)
         {
-            _discord.ChannelCreated += packet.EventsHandlers.ChannelCreated;
-            _discord.ChannelDestroyed += packet.EventsHandlers.ChannelDestroyed;
-            _discord.ChannelUpdated += packet.EventsHandlers.ChannelUpdated;
-            _discord.Connected += packet.EventsHandlers.Connected;
-            _discord.CurrentUserUpdated += packet.EventsHandlers.CurrentUserUpdated;
-            _discord.Disconnected += packet.EventsHandlers.Disconnected;
-            _discord.GuildAvailable += packet.EventsHandlers.GuildAvailable;
-            _discord.GuildMembersDownloaded += packet.EventsHandlers.GuildMembersDownloaded;
-            _discord.GuildMemberUpdated += packet.EventsHandlers.GuildMemberUpdated;
-            _discord.GuildUnavailable += packet.EventsHandlers.GuildUnavailable;
-            _discord.GuildUpdated += packet.EventsHandlers.GuildUpdated;
-            _discord.JoinedGuild += packet.EventsHandlers.JoinedGuild;
-            _discord.LeftGuild += packet.EventsHandlers.LeftGuild;
-            _discord.LoggedIn += packet.EventsHandlers.LoggedIn;
-            _discord.LoggedOut += packet.EventsHandlers.LoggedOut;
-            _discord.MessageUpdated += packet.EventsHandlers.MessageUpdated;
-            _discord.MessageReceived += packet.EventsHandlers.MessageReceived;
-            _discord.ReactionAdded += packet.EventsHandlers.ReactionAdded;
-            _discord.ReactionRemoved += packet.EventsHandlers.ReactionRemoved;
-            _discord.ReactionsCleared += packet.EventsHandlers.ReactionsCleared;
-            _discord.Ready += packet.EventsHandlers.Ready;
-            _discord.RecipientAdded += packet.EventsHandlers.RecipientAdded;
-            _discord.RecipientRemoved += packet.EventsHandlers.RecipientRemoved;
-            _discord.RoleCreated += packet.EventsHandlers.RoleCreated;
-            _discord.RoleDeleted += packet.EventsHandlers.RoleDeleted;
-            _discord.RoleUpdated += packet.EventsHandlers.RoleUpdated;
-            _discord.UserBanned += packet.EventsHandlers.UserBanned;
-            _discord.UserIsTyping += packet.EventsHandlers.UserIsTyping;
-            _discord.UserJoined += packet.EventsHandlers.UserJoined;
-            _discord.UserLeft += packet.EventsHandlers.UserLeft;
-            _discord.UserUnbanned += packet.EventsHandlers.UserUnbanned;
-            _discord.UserUpdated += packet.EventsHandlers.UserUpdated;
-            _discord.UserVoiceStateUpdated += packet.EventsHandlers.UserVoiceStateUpdated;
-            _discord.MessageDeleted += packet.EventsHandlers.MessageDeleted;
+            //_discord.ChannelCreated += packet.ChannelCreated;
+            //_discord.ChannelDestroyed += packet.ChannelDestroyed;
+            //_discord.ChannelUpdated += packet.ChannelUpdated;
+            //_discord.Connected += packet.Connected;
+            //_discord.CurrentUserUpdated += packet.CurrentUserUpdated;
+            //_discord.Disconnected += packet.Disconnected;
+            //_discord.GuildAvailable += packet.GuildAvailable;
+            //_discord.GuildMembersDownloaded += packet.GuildMembersDownloaded;
+            //_discord.GuildMemberUpdated += packet.GuildMemberUpdated;
+            //_discord.GuildUnavailable += packet.GuildUnavailable;
+            //_discord.GuildUpdated += packet.GuildUpdated;
+            //_discord.JoinedGuild += packet.JoinedGuild;
+            //_discord.LeftGuild += packet.LeftGuild;
+            //_discord.LoggedIn += packet.LoggedIn;
+            //_discord.LoggedOut += packet.LoggedOut;
+            //_discord.MessageUpdated += packet.MessageUpdated;
+            //_discord.MessageReceived += packet.MessageReceived;
+            //_discord.ReactionAdded += packet.ReactionAdded;
+            //_discord.ReactionRemoved += packet.ReactionRemoved;
+            //_discord.ReactionsCleared += packet.ReactionsCleared;
+            //_discord.Ready += packet.Ready;
+            //_discord.RecipientAdded += packet.RecipientAdded;
+            //_discord.RecipientRemoved += packet.RecipientRemoved;
+            //_discord.RoleCreated += packet.RoleCreated;
+            //_discord.RoleDeleted += packet.RoleDeleted;
+            //_discord.RoleUpdated += packet.RoleUpdated;
+            //_discord.UserBanned += packet.UserBanned;
+            //_discord.UserIsTyping += packet.UserIsTyping;
+            //_discord.UserJoined += packet.UserJoined;
+            //_discord.UserLeft += packet.UserLeft;
+            //_discord.UserUnbanned += packet.UserUnbanned;
+            //_discord.UserUpdated += packet.UserUpdated;
+            //_discord.UserVoiceStateUpdated += packet.UserVoiceStateUpdated;
+            //_discord.MessageDeleted += packet.MessageDeleted;
         }
     }
 }
