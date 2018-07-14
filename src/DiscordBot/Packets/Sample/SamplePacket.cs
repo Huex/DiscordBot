@@ -1,9 +1,5 @@
 ﻿using DiscordBot.Core;
-using DiscordBot.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DiscordBot.Packets.Sample

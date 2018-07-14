@@ -1,5 +1,4 @@
 ﻿using DiscordBot.Core;
-using DiscordBot.Services;
 
 namespace DiscordBot.Packets.Settings
 {
