@@ -1,0 +1,8 @@
+language: csharp
+solution: src/DiscordBot.sln
+
+sudo: enabled
+os:
+  - linux
+mono: none
+dotnet: 2.0.0
