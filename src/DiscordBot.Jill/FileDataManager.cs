@@ -13,7 +13,19 @@ namespace DiscordBot.Jill
         public static readonly string FILE_TYPE = "json";
         private static readonly string GUILDS_PATH = "commander/";
 
-        IReadOnlyCollection<CommandConfig> ICommandConfigsModOnlyProvider.Configs => ReadAllCommandConfigs();
+        IReadOnlyDictionary<ulong, CommandConfig> ICommandConfigsModOnlyProvider.CommandConfigs
+        {
+            get
+            {
+                var configs = ReadAllCommandConfigs();
+                var dict = new Dictionary<ulong, CommandConfig>();
+                foreach(var conf in configs)
+                {
+                    dict.TryAdd(conf.Id, conf);
+                }
+                return dict;
+            }
+        }
 
         private static string GetGuildPath(ulong guildId) => GUILDS_PATH + guildId + "." + FILE_TYPE;
 
@@ -63,9 +75,14 @@ namespace DiscordBot.Jill
             WriteCommandConfig(config);
         }
 
-        void ICommandConfigsModOnlyProvider.UpdateCommandConfig(ulong id, CommandConfig config)
+        void ICommandConfigsProvider.UpdateCommandConfig(ulong id, CommandConfig config)
         {
             WriteCommandConfig(config);
+        }
+
+        void ICommandConfigsModOnlyProvider.UpdateCommandConfig(ulong id, string prefix, IEnumerable<string> modules)
+        {
+            throw new System.NotImplementedException();
         }
 
 
