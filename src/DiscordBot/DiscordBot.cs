@@ -37,24 +37,24 @@ namespace DiscordBot.Core
             }
         }
 
-        IReadOnlyCollection<CommandConfig> ICommandConfigsModOnlyProvider.Configs
+        IReadOnlyDictionary<ulong, CommandConfig> ICommandConfigsModOnlyProvider.CommandConfigs
         {
             get
             {
-                var configs = new Collection<CommandConfig>();
+                var configs = new Dictionary<ulong, CommandConfig>();
                 foreach(var handler in _commandHandlers.Values)
                 {
-                    configs.Add(handler.Config);
+                    configs.Add(handler.Config.Id, handler.Config);
                 }
                 return configs;
             }
         }
 
-        void ICommandConfigsModOnlyProvider.UpdateCommandConfig(ulong id, CommandConfig config) //доделать ексепшн
+        void ICommandConfigsModOnlyProvider.UpdateCommandConfig(ulong id, string prefix, IEnumerable<string> modules)
         {
             if (CommandConfigExsist(id))
             {
-                _commandHandlers[id].Config = config;
+                _commandHandlers[id].Config = new CommandConfig(_commandHandlers[id].Config.Source, _commandHandlers[id].Config.Name, _commandHandlers[id].Config.Id, prefix, modules);
             }
         }
 
@@ -262,7 +262,7 @@ namespace DiscordBot.Core
         private CommandConfig GetCommandConfigFromProvider(CommandSource source, ulong id)
         {
             CommandConfigBuilder res = null;
-            foreach(var config in ConfigsProvider.Configs)
+            foreach(var config in ConfigsProvider.CommandConfigs.Values)
             {
                 if(config.Id == id)
                 {
@@ -301,17 +301,17 @@ namespace DiscordBot.Core
         private void ExtractCommandsData(PacketBase packet)
         {
             ExtractServices(packet.Services);
-            ExtractModules(packet.DMModules);
-            ExtractModules(packet.GuildModules);
+            ExtractModules(packet.DMModules, _dmModules);
+            ExtractModules(packet.GuildModules, _guildModules);
         }
 
-        private void ExtractModules(Collection<Type> modules)
+        private void ExtractModules(Collection<Type> modules, CommandService service)
         {
             foreach (var module in modules)
             {
                 if (module.IsSubclassOf(typeof(ModuleBase)))
                 {
-                    _dmModules.AddModuleAsync(module);
+                    service.AddModuleAsync(module);
                 }        
             }
         }
