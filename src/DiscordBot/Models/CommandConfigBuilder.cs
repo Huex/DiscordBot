@@ -9,22 +9,21 @@ namespace DiscordBot
         public string Name { get; set; }
         public ulong Id { get; set; }
         public string Prefix { get; set; }
-        public Collection<string> Modules { get; set; }
+        public List<string> Modules { get; set; }
 
         public CommandConfigBuilder() { }
 
         public CommandConfigBuilder(CommandConfig guildConfig) : 
-            this(guildConfig.Source, guildConfig.Name, guildConfig.Id, guildConfig.Prefix, 
-                new Collection<string>(new List<string>(guildConfig.Modules))) { }
+            this(guildConfig.Source, guildConfig.Name, guildConfig.Id, guildConfig.Prefix, guildConfig.Modules) { }
 
-        public CommandConfigBuilder(CommandSource source, string name, ulong id, string prefix, Collection<string> modules) :
+        public CommandConfigBuilder(CommandSource source, string name, ulong id, string prefix, IEnumerable<string> modules) :
             this()
         {
             Source = source;
             Name = name;
             Id = id;
             Prefix = prefix;
-            Modules = modules;
+            Modules = new List<string>(modules);
         }
 
         public CommandConfig Build()
