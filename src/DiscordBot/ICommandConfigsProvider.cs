@@ -6,6 +6,7 @@ namespace DiscordBot
 {
     public interface ICommandConfigsProvider : ICommandConfigsModOnlyProvider
     {
+        void UpdateCommandConfig(ulong id, CommandConfig config);
         void AddCommandConfig(CommandConfig config);
     }
 }

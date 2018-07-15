@@ -6,7 +6,7 @@ namespace DiscordBot
 {
     public interface ICommandConfigsModOnlyProvider
     {
-        IReadOnlyCollection<CommandConfig> Configs { get; }
-        void UpdateCommandConfig(ulong id, CommandConfig config);
+        void UpdateCommandConfig(ulong id, string prefix, IEnumerable<string> modules);
+        IReadOnlyDictionary<ulong, CommandConfig> CommandConfigs { get; }
     }
 }
