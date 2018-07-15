@@ -22,7 +22,7 @@ namespace DiscordBot.Packets.Sample
         private Task ShowCommandConfigs()
         {
             string configs = "";
-            foreach (var config in CommandConfigsProvider.Configs)
+            foreach (var config in CommandConfigsProvider.CommandConfigs.Values)
             {
                 configs += config.Name + " ";
             }
