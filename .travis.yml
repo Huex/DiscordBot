@@ -8,7 +8,6 @@ mono: none
 dotnet: 2.0.0
 
 before_script:
-  - cd ./src/
   - dotnet restore
   
 script:
