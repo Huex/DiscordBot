@@ -10,4 +10,10 @@ dotnet: 2.0.0
 before_script:
   - cd ./src/
   - dotnet restore
+  
+script:
   - dotnet build
+  
+after_script:
+  - cd ./src/DiscordBot.Tests
+  - dotnet test
