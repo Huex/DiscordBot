@@ -8,5 +8,6 @@ namespace DiscordBot
     {
         void UpdateCommandConfig(ulong id, CommandConfig config);
         void AddCommandConfig(CommandConfig config);
+        void DeleteCommandConfig(ulong id);
     }
 }
