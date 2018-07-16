@@ -85,6 +85,11 @@ namespace DiscordBot.Jill
             throw new System.NotImplementedException();
         }
 
+        void ICommandConfigsProvider.DeleteCommandConfig(ulong id)
+        {
+            throw new System.NotImplementedException();
+        }
+
 
 
 
