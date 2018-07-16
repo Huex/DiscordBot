@@ -11,5 +11,3 @@ before_script:
   - cd ./src/
   - dotnet restore
   - dotnet build
-script:
-  - dotnet test
