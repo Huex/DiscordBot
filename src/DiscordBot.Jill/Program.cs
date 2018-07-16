@@ -48,13 +48,7 @@ namespace DiscordBot.Jill
         private async Task MainAsync()
         {
             var botSettings = FileDataManager.ReadBotConfig("settings.json");
-            ICommandConfigsProvider commandProvider = new FileDataManager();
-            //var botSettings1 = new BotConfig();
-            //botSettings1.DefaultGuildCommandConfig = new CommandConfigBuilder();
-            //botSettings1.DefaultGuildCommandConfig.Modules = new Collection<string>();
-            //botSettings1.DefaultGuildCommandConfig.Modules.Add("dasd");
-            //FileDataManager.WriteBotConfig("settings2.json", botSettings1);
-            _bot = new Core.DiscordBot(botSettings, commandProvider, new Collection<PacketBase>
+            _bot = new Core.DiscordBot(botSettings, new FileDataManager(), new Collection<PacketBase>
             {
                 new SettingsPacket(),
                 new SamplePacket()
