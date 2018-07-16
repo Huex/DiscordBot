@@ -8,7 +8,7 @@ namespace DiscordBot.Services
     {
         private readonly Dictionary<ulong, CommandConfig> _commandConfigs = new Dictionary<ulong, CommandConfig>();
 
-        private string KatalogPath => SERVICE_KATALOGNAME + PATH_SEPARATOR + COMMANDCONFIGS_KATALOGNAME;
+        private string KatalogPath => ROOT_KATALOGNAME + PATH_SEPARATOR + COMMANDCONFIGS_KATALOGNAME;
 
         public const string COMMANDCONFIGS_KATALOGNAME = "commands";
 
