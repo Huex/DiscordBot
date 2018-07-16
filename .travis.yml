@@ -13,7 +13,4 @@ before_script:
   
 script:
   - dotnet build
-  
-after_script:
-  - cd ./src/DiscordBot.Tests
-  - dotnet test
+  - dotnet test DiscordBot.Tests/DiscordBot.Tests.csproj
