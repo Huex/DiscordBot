@@ -6,7 +6,7 @@ namespace DiscordBot.Core
 {
     public abstract class PacketBase : LogEntity
     {
-        public IPublicDiscordClient Discord { get; private set; }
+        public IPacketDiscordClient Discord { get; private set; }
         public ICommandConfigsModOnlyProvider CommandConfigsProvider { get; private set; }
         public BotConfig BotConfig { get; private set; }
         public bool DiscordIsInitialized { get; private set; } = false;
