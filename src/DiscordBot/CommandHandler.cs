@@ -75,7 +75,7 @@ namespace DiscordBot.Core
             if (msg != null)
             {
                 int prefixInt = Config.Prefix.Length - 1;
-                if (msg.HasStringPrefix(Config.Prefix, ref prefixInt) || msg.HasMentionPrefix(_discord.CurrentUser, ref prefixInt))
+                if (msg.HasMentionPrefix(_discord.CurrentUser, ref prefixInt) || msg.HasStringPrefix(Config.Prefix, ref prefixInt))
                 {
                     await ProcessCommandAsync(prefixInt, msg).ConfigureAwait(true);
                 }
