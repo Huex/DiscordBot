@@ -95,28 +95,100 @@ namespace DiscordBot.Core
         #endregion
 
         #region Discord events
-        private Task AddCommandHandler(SocketGuild guild)
+        private Task AddCommandHandlerIfNotExsist(IEntity<ulong> source)
         {
-            if (!_commandHandlers.ContainsKey(guild.Id))
+            switch (source)
             {
-                AddCommandHandler(CommandSource.Guild, guild);
+                case SocketGuild guild:
+                    if (!_commandHandlers.ContainsKey(guild.Id))
+                    {
+                        AddCommandHandler(new CommandConfigBuilder(GetCommandConfigFromProvider(CommandSource.Guild, guild.Id))
+                        {
+                            Id = guild.Id,
+                            Name = guild.Name,
+                            Source = CommandSource.Guild
+                        }.Build(), _services, _guildModules);
+                    }
+                    break;
+                case IDMChannel channel:
+                    if (!_commandHandlers.ContainsKey(channel.Recipient.Id))
+                    {
+                        AddCommandHandler(new CommandConfigBuilder(GetCommandConfigFromProvider(CommandSource.User, channel.Recipient.Id))
+                        {
+                            Id = channel.Recipient.Id,
+                            Name = channel.Recipient.Username,
+                            Source = CommandSource.User
+                        }.Build(), _services, _dmModules);
+                    }
+                    break;
+            }
+            return Task.CompletedTask;
+        }
+
+        private Task RemoveCommandHandlerIfExsist(IEntity<ulong> source)
+        {
+            switch (source)
+            {
+                case SocketGuild guild:
+                    if (_commandHandlers.ContainsKey(guild.Id))
+                    {
+                        _commandHandlers.Remove(guild.Id);
+                    }
+                    break;
+                case IDMChannel channel:
+                    if (_commandHandlers.ContainsKey(channel.Recipient.Id))
+                    {
+                        _commandHandlers.Remove(channel.Recipient.Id);
+                    }
+                    break;
+            }
+            return Task.CompletedTask;
+        }
+
+        private Task UpdateCommandHandlerConfig(IEntity<ulong> oldHandlerSource, IEntity<ulong> newHandlerSource)
+        {
+            switch (oldHandlerSource)
+            {
+                case SocketGuild oldGuild:
+                    if (_commandHandlers.ContainsKey(oldGuild.Id))
+                    {
+                        var newGuild = newHandlerSource as SocketGuild;
+                        if (oldGuild.Id == newGuild.Id)
+                        {
+                            UpdateCommandHandler(newGuild);
+                        }
+                        else
+                        {
+                            RemoveCommandHandlerIfExsist(oldGuild);
+                            AddCommandHandlerIfNotExsist(newGuild);
+                        }
+                    }
+                    break;
+                case IDMChannel oldChannel:
+                    if (_commandHandlers.ContainsKey(oldChannel.Recipient.Id))
+                    {
+                        var newChannel = newHandlerSource as IDMChannel;
+                        if (oldChannel.Recipient.Id == newChannel.Recipient.Id)
+                        {
+                            UpdateCommandHandler(newChannel);
+                        }
+                        else
+                        {
+                            RemoveCommandHandlerIfExsist(oldChannel);
+                            AddCommandHandlerIfNotExsist(newChannel);
+                        }
+                    }
+                    break;
             }
             return Task.CompletedTask;
         }
 
         private async Task AddDMCommandHandlersAsync()
         {
-            var channels = await _discord.GetDMChannelsAsync();
-            foreach (var channel in channels)
+            foreach (var channel in await _discord.GetDMChannelsAsync())
             {
-                AddCommandHandler(CommandSource.User, channel);
+                await AddCommandHandlerIfNotExsist(channel);
             }
-        }
-
-        private Task RemoveCommandHandler(SocketGuild arg)
-        {
-            RemoveCommandHandler(arg.Id);
-            return Task.CompletedTask;
         }
 
         private Task HandleMessage(SocketMessage arg)
@@ -133,15 +205,6 @@ namespace DiscordBot.Core
                 {
                     _commandHandlers.GetValueOrDefault(context.User.Id, null)?.HandleMessage(arg).ConfigureAwait(false);
                 }
-            }
-            return Task.CompletedTask;
-        }
-
-        private Task AddDMCommandHandler(SocketChannel arg)
-        {
-            if (!DMCommandHandlerExsist(arg))
-            {
-                AddCommandHandler(CommandSource.User, arg);
             }
             return Task.CompletedTask;
         }
@@ -196,13 +259,36 @@ namespace DiscordBot.Core
 
         private void SubscribeCommandHandlerOnDiscordEvents()
         {
-            _discord.GuildAvailable += AddCommandHandler;
+            _discord.GuildAvailable += AddCommandHandlerIfNotExsist;
+            _discord.JoinedGuild += AddCommandHandlerIfNotExsist;
+            _discord.GuildUnavailable += RemoveCommandHandlerIfExsist;                       
+            _discord.GuildUpdated += UpdateCommandHandlerConfig;
+
+            _discord.ChannelCreated += AddCommandHandlerIfNotExsist;
+            _discord.ChannelUpdated += UpdateCommandHandlerConfig;                     
+            _discord.ChannelDestroyed += RemoveCommandHandlerIfExsist;
+
             _discord.Ready += AddDMCommandHandlersAsync;
-            _discord.JoinedGuild += AddCommandHandler;
-            _discord.GuildUnavailable += RemoveCommandHandler;
+
             _discord.MessageReceived += HandleMessage;
-            _discord.ChannelCreated += AddDMCommandHandler;
-            _discord.ChannelDestroyed += RemoveDMCommandHandler;
+        }
+
+        private void UpdateCommandHandler(SocketGuild newGuild)
+        {
+            UpdateCommandHandler(new CommandConfig(CommandSource.Guild, newGuild.Name, newGuild.Id, _commandHandlers[newGuild.Id].Config.Prefix, _commandHandlers[newGuild.Id].Config.Modules));
+        }
+
+        private void UpdateCommandHandler(IDMChannel newChannel)
+        {
+            UpdateCommandHandler(new CommandConfig(CommandSource.Guild, newChannel.Recipient.Username, newChannel.Recipient.Id, _commandHandlers[newChannel.Recipient.Id].Config.Prefix, _commandHandlers[newChannel.Recipient.Id].Config.Modules));
+        }
+
+        private void UpdateCommandHandler(CommandConfig config)
+        {
+            if (_commandHandlers.ContainsKey(config.Id))
+            {
+                _commandHandlers[config.Id].Config = config;
+            }           
         }
 
         private void ExtractCommandsData(PacketBase packet)
@@ -256,55 +342,28 @@ namespace DiscordBot.Core
             }
         }
 
-        private void AddCommandHandler(CommandSource source, IEntity<ulong> socket)
-        {
-            if (!_commandHandlers.ContainsKey(socket.Id))
-            {
-                switch (source)
-                {
-                    case CommandSource.Guild:
-                        AddCommandHandler(new CommandConfigBuilder(GetCommandConfigFromProvider(CommandSource.Guild, (socket as SocketGuild).Id))
-                        {
-                            Id = (socket as SocketGuild).Id,
-                            Name = (socket as SocketGuild).Name,
-                            Source = CommandSource.Guild
-                        }.Build(), _services, _guildModules);
-                        break;
-                    case CommandSource.User:
-                        AddCommandHandler(new CommandConfigBuilder(GetCommandConfigFromProvider(CommandSource.User, (socket as IDMChannel).Recipient.Id))
-                        {
-                            Id = (socket as IDMChannel).Recipient.Id,
-                            Name = (socket as IDMChannel).Recipient.Username,
-                            Source = CommandSource.User
-                        }.Build(), _services, _dmModules);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-
         private CommandConfig GetCommandConfigFromProvider(CommandSource source, ulong id)
         {
             CommandConfigBuilder res = null;
-            foreach(var config in ConfigsProvider.CommandConfigs.Values)
+            foreach (var config in ConfigsProvider.CommandConfigs.Values)
             {
-                if(config.Id == id)
+                if (config.Id == id)
                 {
                     res = new CommandConfigBuilder(config);
                 }
             }
-            switch (source)
+            if (res == null)
             {
-                case CommandSource.User:
-                    res = res ?? Config.DefaultUserCommandConfig;
-                    break;
-                case CommandSource.Guild:
-                    res = res ?? Config.DefaultGuildCommandConfig;
-                    break;
-                default:
-                    break;
-            }  
+                switch (source)
+                {
+                    case CommandSource.User:
+                        res = Config.DefaultUserCommandConfig;
+                        break;
+                    case CommandSource.Guild:
+                        res = Config.DefaultGuildCommandConfig;
+                        break;
+                }
+            }
             return res.Build();
         }
 
