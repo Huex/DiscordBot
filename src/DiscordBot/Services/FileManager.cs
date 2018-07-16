@@ -7,12 +7,12 @@ using System.Text;
 
 namespace DiscordBot.Services
 {
-    public class FileManager
+    public class FileManager : LogEntity
     {
         public static readonly Encoding TextEncoding = Encoding.UTF8;
 
         public const string FILE_TYPE = "json";
-        public const string SERVICE_KATALOGNAME = "data";
+        public const string ROOT_KATALOGNAME = "data";
         public const string PATH_SEPARATOR = "/";
         public const string FILE_TYPE_SEPARATOR = ".";
 
@@ -24,6 +24,11 @@ namespace DiscordBot.Services
         protected static void WriteJson<T>(string path, T obj)
         {
             File.WriteAllText(path, JsonConvert.SerializeObject(obj, new JsonSerializerSettings { ContractResolver = new IgnoreParentPropertiesResolver(true) }), TextEncoding);
+        }
+
+        protected string GetKatalogPath(string katalogName)
+        {
+            return ROOT_KATALOGNAME + PATH_SEPARATOR + katalogName;
         }
     }
 }
