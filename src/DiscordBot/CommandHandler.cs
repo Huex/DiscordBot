@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -41,8 +42,7 @@ namespace DiscordBot.Core
         {
             foreach (var module in Commands.Modules)
             {
-                var needed = new List<string>(config.Modules);
-                if (!needed.Contains(module.Name))
+                if (!config.Modules.Contains(module.Name))
                 {
                     await Commands.RemoveModuleAsync(module);
                 }
