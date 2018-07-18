@@ -10,12 +10,14 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Core
 {
-    public class CommandHandler : LogEntity
+    public class CommandHandler : ILogEntity
     {
         private readonly DiscordSocketClient _discord;
         private CommandConfig _config;
 
         public event Action<ulong, CommandConfig> ConfigUpdated;
+        public event Func<LogMessage, Task> Log;
+
         public IServiceProvider Services { get; set; }
         public CommandService Commands { get; set; }
         public CommandConfig Config
@@ -31,6 +33,28 @@ namespace DiscordBot.Core
                 UpdateCommandsAsync(Config).ConfigureAwait(true);
             }
         }
+
+        #region Log
+        protected void RaiseLog(LogSeverity severity, string message, Exception exception = null)
+        {
+            RaiseLog(new LogMessage(severity, GetType().Name, message, exception));
+        }
+
+        protected void RaiseLog(LogMessage message)
+        {
+            Log?.Invoke(message);
+        }
+
+        protected async Task RaiseLogAsync(LogMessage message)
+        {
+            await Log?.Invoke(message);
+        }
+
+        protected async Task RaiseLogAsync(Discord.LogMessage message)
+        {
+            await Log?.Invoke(new LogMessage(message));
+        }
+        #endregion
 
         private void RaiseConfiUpdatedEvent()
         {

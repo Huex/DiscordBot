@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Core
 {
-    public class DiscordBot : LogEntity, ICommandConfigsModOnlyProvider
+    public class DiscordBot : ILogEntity, ICommandConfigsModOnlyProvider
     {
         private readonly DiscordClient _discord;
         private readonly List<PacketBase> _packets;
@@ -20,6 +20,8 @@ namespace DiscordBot.Core
         private readonly CommandService _dmModules = new CommandService();
        
         public BotConfig Config { get; }
+
+        public event Func<LogMessage, Task> Log;
 
         private ICommandConfigsProvider _configsProvider;
         public ICommandConfigsProvider ConfigsProvider
@@ -208,6 +210,28 @@ namespace DiscordBot.Core
                 RemoveCommandHandler((arg as IDMChannel).Recipient.Id);
             }
             return Task.CompletedTask;
+        }
+        #endregion
+
+        #region Log
+        protected void RaiseLog(LogSeverity severity, string message, Exception exception = null)
+        {
+            RaiseLog(new LogMessage(severity, GetType().Name, message, exception));
+        }
+
+        protected void RaiseLog(LogMessage message)
+        {
+            Log?.Invoke(message);
+        }
+
+        protected async Task RaiseLogAsync(LogMessage message)
+        {
+            await Log?.Invoke(message);
+        }
+
+        protected async Task RaiseLogAsync(Discord.LogMessage message)
+        {
+            await Log?.Invoke(new LogMessage(message));
         }
         #endregion
 
