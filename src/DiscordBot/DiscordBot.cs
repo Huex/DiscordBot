@@ -95,7 +95,7 @@ namespace DiscordBot.Core
         #endregion
 
         #region Discord events
-        private Task AddCommandHandlerIfNotExsist(IEntity<ulong> source)
+        private Task AddCommandHandlerIfNotExists(IEntity<ulong> source)
         {
             switch (source)
             {
@@ -166,12 +166,12 @@ namespace DiscordBot.Core
             {
                 if (oldId == newId)
                 {
-                    UpdateCommandHandlerIfExsist(newHandlerSource);
+                    UpdateCommandHandlerIfExists(newHandlerSource);
                 }
                 else
                 {
                     RemoveCommandHandler(oldHandlerSource);
-                    AddCommandHandlerIfNotExsist(newHandlerSource);
+                    AddCommandHandlerIfNotExists(newHandlerSource);
                 }
             }
         }
@@ -180,7 +180,7 @@ namespace DiscordBot.Core
         {
             foreach (var channel in await _discord.GetDMChannelsAsync())
             {
-                await AddCommandHandlerIfNotExsist(channel);
+                await AddCommandHandlerIfNotExists(channel);
             }
         }
 
@@ -205,7 +205,7 @@ namespace DiscordBot.Core
 
         private Task RemoveDMCommandHandler(SocketChannel arg)
         {
-            if (DMCommandHandlerExsist(arg))
+            if (DMCommandHandlerExists(arg))
             {
                 RemoveCommandHandler((arg as IDMChannel).Recipient.Id);
             }
@@ -274,12 +274,12 @@ namespace DiscordBot.Core
 
         private void SubscribeCommandHandlerOnDiscordEvents()
         {
-            _discord.GuildAvailable += AddCommandHandlerIfNotExsist;
-            _discord.JoinedGuild += AddCommandHandlerIfNotExsist;
+            _discord.GuildAvailable += AddCommandHandlerIfNotExists;
+            _discord.JoinedGuild += AddCommandHandlerIfNotExists;
             _discord.GuildUnavailable += RemoveCommandHandler;                       
             _discord.GuildUpdated += UpdateCommandHandlerConfig;
 
-            _discord.ChannelCreated += AddCommandHandlerIfNotExsist;
+            _discord.ChannelCreated += AddCommandHandlerIfNotExists;
             _discord.ChannelUpdated += UpdateCommandHandlerConfig;                     
             _discord.ChannelDestroyed += RemoveCommandHandler;
 
@@ -288,7 +288,7 @@ namespace DiscordBot.Core
             _discord.MessageReceived += HandleMessage;
         }
 
-        private void UpdateCommandHandlerIfExsist(IEntity<ulong> newHandlerSource)
+        private void UpdateCommandHandlerIfExists(IEntity<ulong> newHandlerSource)
         {
             switch (newHandlerSource)
             {
@@ -340,7 +340,7 @@ namespace DiscordBot.Core
             }
         }
 
-        private bool DMCommandHandlerExsist(SocketChannel arg)
+        private bool DMCommandHandlerExists(SocketChannel arg)
         {
             if (arg is IDMChannel)
             {
