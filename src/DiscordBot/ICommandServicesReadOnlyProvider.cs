@@ -5,7 +5,7 @@ using System.Text;
 
 namespace DiscordBot
 {
-    interface ICommandServiceReadOnlyProvider
+    public interface ICommandServicesReadOnlyProvider
     {
         IReadOnlyDictionary<ulong, CommandService> CommandServices { get; }
     }
