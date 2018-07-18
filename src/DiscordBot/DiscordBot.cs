@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Core
 {
-    public class DiscordBot : ILogEntity, ICommandConfigsModOnlyProvider
+    public class DiscordBot : ILogEntity, ICommandConfigsModOnlyProvider, ICommandServiceReadOnlyProvider
     {
         private readonly DiscordClient _discord;
         private readonly List<PacketBase> _packets;
@@ -56,6 +56,21 @@ namespace DiscordBot.Core
             if (_commandHandlers.ContainsKey(id))
             {
                 _commandHandlers[id].Config = new CommandConfig(_commandHandlers[id].Config.Source, _commandHandlers[id].Config.Name, _commandHandlers[id].Config.Id, prefix, modules);
+            }
+        }
+        #endregion
+
+        #region ICommandServiceReadOnlyProvider
+        IReadOnlyDictionary<ulong, CommandService> ICommandServiceReadOnlyProvider.CommandServices
+        {
+            get
+            {
+                var commands = new Dictionary<ulong, CommandService>();
+                foreach (var handler in _commandHandlers.Values)
+                {
+                    commands.Add(handler.Config.Id, handler.Commands);
+                }
+                return commands;
             }
         }
         #endregion
