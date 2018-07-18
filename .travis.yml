@@ -6,3 +6,10 @@ os:
   - linux
 mono: none
 dotnet: 2.0.0
+
+before_script:
+  - cd ./src/ && dotnet restore
+  
+script:
+  - dotnet build
+  - dotnet test DiscordBot.Tests/DiscordBot.Tests.csproj
