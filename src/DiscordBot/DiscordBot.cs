@@ -121,6 +121,9 @@ namespace DiscordBot.Core
                         }.Build(), _services, _dmModules);
                     }
                     break;
+                default:
+                    RaiseLog(LogSeverity.Warning, $"Can't add command handler with unknown source");
+                    break;
             }
             return Task.CompletedTask;
         }
@@ -141,13 +144,16 @@ namespace DiscordBot.Core
                         _commandHandlers.Remove(channel.Recipient.Id);
                     }
                     break;
+                default:
+                    RaiseLog(LogSeverity.Warning, $"Can't remove command handler with unknown source");
+                    break;
             }
             return Task.CompletedTask;
         }
 
         private Task UpdateCommandHandlerConfig(SocketChannel oldHandlerSource, SocketChannel newHandlerSource)
         {
-            if((oldHandlerSource is IDMChannel) & (newHandlerSource is IDMChannel))
+            if((oldHandlerSource is IDMChannel) && (newHandlerSource is IDMChannel))
             {
                 UpdateCommandHandler(oldHandlerSource, newHandlerSource, (oldHandlerSource as IDMChannel).Recipient.Id, (newHandlerSource as IDMChannel).Recipient.Id);
             }        
@@ -180,7 +186,7 @@ namespace DiscordBot.Core
         {
             foreach (var channel in await _discord.GetDMChannelsAsync())
             {
-                await AddCommandHandlerIfNotExists(channel);
+                await AddCommandHandlerIfNotExists(channel).ConfigureAwait(true);
             }
         }
 
@@ -199,15 +205,6 @@ namespace DiscordBot.Core
                 {
                     RaiseLog(new LogMessage(LogSeverity.Warning, this.GetType().Name, $"Missing command handler for {id}"));
                 }
-            }
-            return Task.CompletedTask;
-        }
-
-        private Task RemoveDMCommandHandler(SocketChannel arg)
-        {
-            if (DMCommandHandlerExists(arg))
-            {
-                RemoveCommandHandler((arg as IDMChannel).Recipient.Id);
             }
             return Task.CompletedTask;
         }
@@ -298,6 +295,9 @@ namespace DiscordBot.Core
                 case IDMChannel newChannel:
                     UpdateCommandHandlerIfExist(new CommandConfig(CommandSource.Guild, newChannel.Recipient.Username, newChannel.Recipient.Id, _commandHandlers[newChannel.Recipient.Id].Config.Prefix, _commandHandlers[newChannel.Recipient.Id].Config.Modules));
                     break;
+                default:
+                    RaiseLog(LogSeverity.Warning, $"Can't update command handler with unknown source");
+                    break;
             }
         }
 
@@ -380,6 +380,10 @@ namespace DiscordBot.Core
                     case CommandSource.Guild:
                         res = Config.DefaultGuildCommandConfig;
                         break;
+                    default:
+                        RaiseLog(LogSeverity.Warning, $"Can't get command config with unknown source");
+                        break;
+
                 }
             }
             return res.Build();

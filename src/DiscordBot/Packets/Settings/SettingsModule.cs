@@ -13,7 +13,7 @@ namespace DiscordBot.Packets.Settings
         private readonly SettingsService _settings;
 
         private ulong CommandHandlerId => 
-            (Context.Channel is IDMChannel) & (Context.Guild == null) ? (Context.Channel as IDMChannel).Recipient.Id : Context.Guild.Id;
+            (Context.Channel is IDMChannel) && (Context.Guild == null) ? (Context.Channel as IDMChannel).Recipient.Id : Context.Guild.Id;
 
         public SettingsModule(SettingsService settings)
         {
