@@ -173,11 +173,19 @@ namespace DiscordBot.Core
 
         private Task HandleMessage(SocketMessage arg)
         {
-            if (arg is SocketUserMessage)
+            if (arg is SocketUserMessage userMessage)
             {
-                var context = new SocketCommandContext(_discord, arg as SocketUserMessage);
+                var context = new SocketCommandContext(_discord, userMessage);
                 ulong id = context.Guild != null ? context.Guild.Id : context.User.Id;
-                _commandHandlers.GetValueOrDefault(id, null)?.HandleMessage(arg).ConfigureAwait(false);
+                var handler = _commandHandlers.GetValueOrDefault(id, null);
+                if(handler != null)
+                {
+                    handler.HandleMessage(arg).ConfigureAwait(false);
+                }
+                else
+                {
+                    RaiseLog(new LogMessage(LogSeverity.Warning, this.GetType().Name, $"Missing command handler for {id}"));
+                }
             }
             return Task.CompletedTask;
         }
