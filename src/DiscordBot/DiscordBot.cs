@@ -148,34 +148,16 @@ namespace DiscordBot.Core
             switch (oldHandlerSource)
             {
                 case SocketGuild oldGuild:
-                    if (_commandHandlers.ContainsKey(oldGuild.Id))
+                    if(newHandlerSource is SocketChannel newGuild)
                     {
-                        var newGuild = newHandlerSource as SocketGuild;
-                        if (oldGuild.Id == newGuild.Id)
-                        {
-                            UpdateCommandHandler(newGuild);
-                        }
-                        else
-                        {
-                            RemoveCommandHandlerIfExsist(oldGuild);
-                            AddCommandHandlerIfNotExsist(newGuild);
-                        }
+                        UpdateCommandHandler(newHandlerSource, newGuild, newGuild.Id, newGuild.Id);
                     }
                     break;
                 case IDMChannel oldChannel:
-                    if (_commandHandlers.ContainsKey(oldChannel.Recipient.Id))
+                    if(newHandlerSource is IDMChannel newChannel)
                     {
-                        var newChannel = newHandlerSource as IDMChannel;
-                        if (oldChannel.Recipient.Id == newChannel.Recipient.Id)
-                        {
-                            UpdateCommandHandler(newChannel);
-                        }
-                        else
-                        {
-                            RemoveCommandHandlerIfExsist(oldChannel);
-                            AddCommandHandlerIfNotExsist(newChannel);
-                        }
-                    }
+                        UpdateCommandHandler(newHandlerSource, oldChannel, oldChannel.Recipient.Id, newChannel.Recipient.Id);
+                    }                  
                     break;
             }
             return Task.CompletedTask;
@@ -193,16 +175,9 @@ namespace DiscordBot.Core
         {
             if (arg is SocketUserMessage)
             {
-                var msg = arg as SocketUserMessage;
-                var context = new SocketCommandContext(_discord, msg);
-                if (context.Guild != null)
-                {
-                    _commandHandlers.GetValueOrDefault(context.Guild.Id, null)?.HandleMessage(arg).ConfigureAwait(false);
-                }
-                else
-                {
-                    _commandHandlers.GetValueOrDefault(context.User.Id, null)?.HandleMessage(arg).ConfigureAwait(false);
-                }
+                var context = new SocketCommandContext(_discord, arg as SocketUserMessage);
+                ulong id = context.Guild != null ? context.Guild.Id : context.User.Id;
+                _commandHandlers.GetValueOrDefault(id, null)?.HandleMessage(arg).ConfigureAwait(false);
             }
             return Task.CompletedTask;
         }
@@ -211,8 +186,7 @@ namespace DiscordBot.Core
         {
             if (DMCommandHandlerExsist(arg))
             {
-                var channel = arg as IDMChannel;
-                RemoveCommandHandler(channel.Recipient.Id);
+                RemoveCommandHandler((arg as IDMChannel).Recipient.Id);
             }
             return Task.CompletedTask;
         }
@@ -271,14 +245,33 @@ namespace DiscordBot.Core
             _discord.MessageReceived += HandleMessage;
         }
 
-        private void UpdateCommandHandler(SocketGuild newGuild)
+        private void UpdateCommandHandler(IEntity<ulong> newHandlerSource)
         {
-            UpdateCommandHandler(new CommandConfig(CommandSource.Guild, newGuild.Name, newGuild.Id, _commandHandlers[newGuild.Id].Config.Prefix, _commandHandlers[newGuild.Id].Config.Modules));
+            switch (newHandlerSource)
+            {
+                case SocketGuild newGuild:
+                    UpdateCommandHandler(new CommandConfig(CommandSource.Guild, newGuild.Name, newGuild.Id, _commandHandlers[newGuild.Id].Config.Prefix, _commandHandlers[newGuild.Id].Config.Modules));
+                    break;
+                case IDMChannel newChannel:
+                    UpdateCommandHandler(new CommandConfig(CommandSource.Guild, newChannel.Recipient.Username, newChannel.Recipient.Id, _commandHandlers[newChannel.Recipient.Id].Config.Prefix, _commandHandlers[newChannel.Recipient.Id].Config.Modules));
+                    break;
+            }
         }
 
-        private void UpdateCommandHandler(IDMChannel newChannel)
+        private void UpdateCommandHandler(IEntity<ulong> oldHandlerSource, IEntity<ulong> newHandlerSource, ulong oldId, ulong newId)
         {
-            UpdateCommandHandler(new CommandConfig(CommandSource.Guild, newChannel.Recipient.Username, newChannel.Recipient.Id, _commandHandlers[newChannel.Recipient.Id].Config.Prefix, _commandHandlers[newChannel.Recipient.Id].Config.Modules));
+            if (_commandHandlers.ContainsKey(oldId))
+            {
+                if (oldId == newId)
+                {
+                    UpdateCommandHandler(newHandlerSource);
+                }
+                else
+                {
+                    RemoveCommandHandlerIfExsist(oldHandlerSource);
+                    AddCommandHandlerIfNotExsist(newHandlerSource);
+                }
+            }
         }
 
         private void UpdateCommandHandler(CommandConfig config)
