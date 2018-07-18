@@ -50,8 +50,7 @@ namespace DiscordBot.Jill
             var botSettings = FileDataManager.ReadBotConfig("settings.json");
             _bot = new Core.DiscordBot(botSettings, new FileDataManager(), new Collection<PacketBase>
             {
-                new SettingsPacket(),
-                new SamplePacket()
+                new SettingsPacket()
             });
             _bot.Log += Log;
             await _bot.StartAsync();
