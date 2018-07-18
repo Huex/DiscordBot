@@ -27,6 +27,7 @@ namespace DiscordBot.Packets.Sample
             }
             catch(Exception ex)
             {
+                RaiseLog(LogSeverity.Warning, ex.Message);
                 return null;
             }
             return res;
