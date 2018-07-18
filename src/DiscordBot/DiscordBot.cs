@@ -123,7 +123,7 @@ namespace DiscordBot.Core
             return Task.CompletedTask;
         }
 
-        private Task RemoveCommandHandlerIfExsist(IEntity<ulong> source)
+        private Task RemoveCommandHandler(IEntity<ulong> source)
         {
             switch (source)
             {
@@ -143,24 +143,35 @@ namespace DiscordBot.Core
             return Task.CompletedTask;
         }
 
-        private Task UpdateCommandHandlerConfig(IEntity<ulong> oldHandlerSource, IEntity<ulong> newHandlerSource)
+        private Task UpdateCommandHandlerConfig(SocketChannel oldHandlerSource, SocketChannel newHandlerSource)
         {
-            switch (oldHandlerSource)
+            if((oldHandlerSource is IDMChannel) & (newHandlerSource is IDMChannel))
             {
-                case SocketGuild oldGuild:
-                    if(newHandlerSource is SocketChannel newGuild)
-                    {
-                        UpdateCommandHandler(newHandlerSource, newGuild, newGuild.Id, newGuild.Id);
-                    }
-                    break;
-                case IDMChannel oldChannel:
-                    if(newHandlerSource is IDMChannel newChannel)
-                    {
-                        UpdateCommandHandler(newHandlerSource, oldChannel, oldChannel.Recipient.Id, newChannel.Recipient.Id);
-                    }                  
-                    break;
-            }
+                UpdateCommandHandler(oldHandlerSource, newHandlerSource, (oldHandlerSource as IDMChannel).Recipient.Id, (newHandlerSource as IDMChannel).Recipient.Id);
+            }        
             return Task.CompletedTask;
+        }
+
+        private Task UpdateCommandHandlerConfig(SocketGuild oldHandlerSource, SocketGuild newHandlerSource)
+        {
+            UpdateCommandHandler(oldHandlerSource, newHandlerSource, oldHandlerSource.Id, newHandlerSource.Id);
+            return Task.CompletedTask;
+        }
+
+        private void UpdateCommandHandler(IEntity<ulong> oldHandlerSource, IEntity<ulong> newHandlerSource, ulong oldId, ulong newId)
+        {
+            if (_commandHandlers.ContainsKey(oldId))
+            {
+                if (oldId == newId)
+                {
+                    UpdateCommandHandlerIfExsist(newHandlerSource);
+                }
+                else
+                {
+                    RemoveCommandHandler(oldHandlerSource);
+                    AddCommandHandlerIfNotExsist(newHandlerSource);
+                }
+            }
         }
 
         private async Task AddDMCommandHandlersAsync()
@@ -241,48 +252,32 @@ namespace DiscordBot.Core
         {
             _discord.GuildAvailable += AddCommandHandlerIfNotExsist;
             _discord.JoinedGuild += AddCommandHandlerIfNotExsist;
-            _discord.GuildUnavailable += RemoveCommandHandlerIfExsist;                       
+            _discord.GuildUnavailable += RemoveCommandHandler;                       
             _discord.GuildUpdated += UpdateCommandHandlerConfig;
 
             _discord.ChannelCreated += AddCommandHandlerIfNotExsist;
             _discord.ChannelUpdated += UpdateCommandHandlerConfig;                     
-            _discord.ChannelDestroyed += RemoveCommandHandlerIfExsist;
+            _discord.ChannelDestroyed += RemoveCommandHandler;
 
             _discord.Ready += AddDMCommandHandlersAsync;
 
             _discord.MessageReceived += HandleMessage;
         }
 
-        private void UpdateCommandHandler(IEntity<ulong> newHandlerSource)
+        private void UpdateCommandHandlerIfExsist(IEntity<ulong> newHandlerSource)
         {
             switch (newHandlerSource)
             {
                 case SocketGuild newGuild:
-                    UpdateCommandHandler(new CommandConfig(CommandSource.Guild, newGuild.Name, newGuild.Id, _commandHandlers[newGuild.Id].Config.Prefix, _commandHandlers[newGuild.Id].Config.Modules));
+                    UpdateCommandHandlerIfExist(new CommandConfig(CommandSource.Guild, newGuild.Name, newGuild.Id, _commandHandlers[newGuild.Id].Config.Prefix, _commandHandlers[newGuild.Id].Config.Modules));
                     break;
                 case IDMChannel newChannel:
-                    UpdateCommandHandler(new CommandConfig(CommandSource.Guild, newChannel.Recipient.Username, newChannel.Recipient.Id, _commandHandlers[newChannel.Recipient.Id].Config.Prefix, _commandHandlers[newChannel.Recipient.Id].Config.Modules));
+                    UpdateCommandHandlerIfExist(new CommandConfig(CommandSource.Guild, newChannel.Recipient.Username, newChannel.Recipient.Id, _commandHandlers[newChannel.Recipient.Id].Config.Prefix, _commandHandlers[newChannel.Recipient.Id].Config.Modules));
                     break;
             }
         }
 
-        private void UpdateCommandHandler(IEntity<ulong> oldHandlerSource, IEntity<ulong> newHandlerSource, ulong oldId, ulong newId)
-        {
-            if (_commandHandlers.ContainsKey(oldId))
-            {
-                if (oldId == newId)
-                {
-                    UpdateCommandHandler(newHandlerSource);
-                }
-                else
-                {
-                    RemoveCommandHandlerIfExsist(oldHandlerSource);
-                    AddCommandHandlerIfNotExsist(newHandlerSource);
-                }
-            }
-        }
-
-        private void UpdateCommandHandler(CommandConfig config)
+        private void UpdateCommandHandlerIfExist(CommandConfig config)
         {
             if (_commandHandlers.ContainsKey(config.Id))
             {
