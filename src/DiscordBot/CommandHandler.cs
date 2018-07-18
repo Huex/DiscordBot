@@ -28,9 +28,9 @@ namespace DiscordBot.Core
             }
             set
             {
-                _config = value;
+                UpdateCommandsAsync(value).ConfigureAwait(true);
+                _config = RemoveUnavailableModules(value);
                 RaiseConfiUpdatedEvent();
-                UpdateCommandsAsync(Config).ConfigureAwait(true);
             }
         }
 
@@ -73,6 +73,17 @@ namespace DiscordBot.Core
             }
         }
 
+        private CommandConfig RemoveUnavailableModules(CommandConfig config)
+        {
+            var commands = Commands.Modules.ToList();
+            var needed = config.Modules.ToList();
+            needed.RemoveAll((c) =>
+            {
+                return !commands.Exists(p => p.Name == c);
+            });
+            return new CommandConfig(config.Source, config.Name, config.Id, config.Prefix, needed);
+        }
+
         private static string GetNameFromModule(Type module)
         {
             var attributes = new List<CustomAttributeData>(module.GetCustomAttributesData());
@@ -86,6 +97,7 @@ namespace DiscordBot.Core
             Commands = commands ?? throw new ArgumentNullException(nameof(commands));
             Services = services ?? throw new ArgumentNullException(nameof(services));
             Commands.Log += RaiseLogAsync;
+
             Config = config;
         }
 
