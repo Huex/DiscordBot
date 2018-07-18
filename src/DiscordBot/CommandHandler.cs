@@ -80,13 +80,6 @@ namespace DiscordBot.Core
             return new CommandConfig(config.Source, config.Name, config.Id, config.Prefix, needed);
         }
 
-        private static string GetNameFromModule(Type module)
-        {
-            var attributes = new List<CustomAttributeData>(module.GetCustomAttributesData());
-            var needed = attributes?.Find(p => p.AttributeType == typeof(NameAttribute));
-            return (string)needed?.ConstructorArguments[0].Value;
-        }
-
         private async Task HandleCommand(SocketUserMessage msg)
         {
             if (msg != null)

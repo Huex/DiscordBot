@@ -333,26 +333,6 @@ namespace DiscordBot.Core
             }
         }
 
-        private bool DMCommandHandlerExists(SocketChannel arg)
-        {
-            if (arg is IDMChannel)
-            {
-                if (_commandHandlers.ContainsKey((arg as IDMChannel).Recipient.Id))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private void RemoveCommandHandler(ulong id)
-        {
-            if (_commandHandlers.ContainsKey(id))
-            {
-                _commandHandlers.Remove(id);
-            }
-        }
-
         private async Task<CommandConfig> GetCommandConfigFromProviderAsync(CommandSource source, ulong id)
         {
             CommandConfigBuilder res = null;
