@@ -9,12 +9,15 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Core
 {
-    public class DiscordBot : ILogEntity, ICommandConfigsModOnlyProvider, ICommandServiceReadOnlyProvider
+    public class DiscordBot : ILogEntity, ICommandConfigsModOnlyProvider, ICommandServicesReadOnlyProvider
     {
+        private readonly string _token;
         private readonly DiscordClient _discord;
         private readonly List<PacketBase> _packets;
-        private readonly string _token;
+        private readonly LogRaiser _log;
+
         private readonly Dictionary<ulong, CommandHandler> _commandHandlers = new Dictionary<ulong, CommandHandler>();
+
         private readonly ServiceCollection _services = new ServiceCollection();
         private readonly CommandService _guildModules = new CommandService();
         private readonly CommandService _dmModules = new CommandService();
@@ -61,7 +64,7 @@ namespace DiscordBot.Core
         #endregion
 
         #region ICommandServiceReadOnlyProvider
-        IReadOnlyDictionary<ulong, CommandService> ICommandServiceReadOnlyProvider.CommandServices
+        IReadOnlyDictionary<ulong, CommandService> ICommandServicesReadOnlyProvider.CommandServices
         {
             get
             {
@@ -83,6 +86,8 @@ namespace DiscordBot.Core
 
         public DiscordBot(BotConfig config, ICollection<PacketBase> packets)
         {
+            _log = new LogRaiser(async (msg) => await Log?.Invoke(msg));
+
             if (packets == null)
             {
                 throw new ArgumentNullException(nameof(packets));
@@ -93,7 +98,7 @@ namespace DiscordBot.Core
             Config = config;
             _discord = new DiscordClient(Config.DiscordSocket);
             _packets = new List<PacketBase>(packets);
-            _discord.Log += RaiseLogAsync;
+            _discord.Log += _log.RaiseAsync;
             InitPackets();
             InitCommandsHandler();
         }
@@ -110,14 +115,14 @@ namespace DiscordBot.Core
         #endregion
 
         #region Discord events
-        private Task AddCommandHandlerIfNotExists(IEntity<ulong> source)
+        private async Task AddCommandHandlerIfNotExistsAsync(IEntity<ulong> source)
         {
             switch (source)
             {
                 case SocketGuild guild:
                     if (!_commandHandlers.ContainsKey(guild.Id))
                     {
-                        AddCommandHandler(new CommandConfigBuilder(GetCommandConfigFromProvider(CommandSource.Guild, guild.Id))
+                        await AddCommandHandlerAsync(new CommandConfigBuilder(await GetCommandConfigFromProviderAsync(CommandSource.Guild, guild.Id))
                         {
                             Id = guild.Id,
                             Name = guild.Name,
@@ -128,7 +133,7 @@ namespace DiscordBot.Core
                 case IDMChannel channel:
                     if (!_commandHandlers.ContainsKey(channel.Recipient.Id))
                     {
-                        AddCommandHandler(new CommandConfigBuilder(GetCommandConfigFromProvider(CommandSource.User, channel.Recipient.Id))
+                        await AddCommandHandlerAsync(new CommandConfigBuilder(await GetCommandConfigFromProviderAsync(CommandSource.User, channel.Recipient.Id))
                         {
                             Id = channel.Recipient.Id,
                             Name = channel.Recipient.Username,
@@ -137,13 +142,12 @@ namespace DiscordBot.Core
                     }
                     break;
                 default:
-                    RaiseLog(LogSeverity.Warning, $"Can't add command handler with unknown source");
+                    await _log.RaiseAsync(LogSeverity.Warning, $"Can't add command handler with unknown source");
                     break;
             }
-            return Task.CompletedTask;
         }
 
-        private Task RemoveCommandHandler(IEntity<ulong> source)
+        private async Task RemoveCommandHandlerAsync(IEntity<ulong> source)
         {
             switch (source)
             {
@@ -160,39 +164,36 @@ namespace DiscordBot.Core
                     }
                     break;
                 default:
-                    RaiseLog(LogSeverity.Warning, $"Can't remove command handler with unknown source");
+                    await _log.RaiseAsync(LogSeverity.Warning, $"Can't remove command handler with unknown source");
                     break;
             }
-            return Task.CompletedTask;
         }
 
-        private Task UpdateCommandHandlerConfig(SocketChannel oldHandlerSource, SocketChannel newHandlerSource)
+        private async Task UpdateCommandHandlerConfigAsync(SocketChannel oldHandlerSource, SocketChannel newHandlerSource)
         {
             if((oldHandlerSource is IDMChannel) && (newHandlerSource is IDMChannel))
             {
-                UpdateCommandHandler(oldHandlerSource, newHandlerSource, (oldHandlerSource as IDMChannel).Recipient.Id, (newHandlerSource as IDMChannel).Recipient.Id);
+                await UpdateCommandHandlerAsync(oldHandlerSource, newHandlerSource, (oldHandlerSource as IDMChannel).Recipient.Id, (newHandlerSource as IDMChannel).Recipient.Id);
             }        
-            return Task.CompletedTask;
         }
 
-        private Task UpdateCommandHandlerConfig(SocketGuild oldHandlerSource, SocketGuild newHandlerSource)
+        private async Task UpdateCommandHandlerConfigAsync(SocketGuild oldHandlerSource, SocketGuild newHandlerSource)
         {
-            UpdateCommandHandler(oldHandlerSource, newHandlerSource, oldHandlerSource.Id, newHandlerSource.Id);
-            return Task.CompletedTask;
+            await UpdateCommandHandlerAsync(oldHandlerSource, newHandlerSource, oldHandlerSource.Id, newHandlerSource.Id);
         }
 
-        private void UpdateCommandHandler(IEntity<ulong> oldHandlerSource, IEntity<ulong> newHandlerSource, ulong oldId, ulong newId)
+        private async Task UpdateCommandHandlerAsync(IEntity<ulong> oldHandlerSource, IEntity<ulong> newHandlerSource, ulong oldId, ulong newId)
         {
             if (_commandHandlers.ContainsKey(oldId))
             {
                 if (oldId == newId)
                 {
-                    UpdateCommandHandlerIfExists(newHandlerSource);
+                    await UpdateCommandHandlerIfExistsAsync(newHandlerSource);
                 }
                 else
                 {
-                    RemoveCommandHandler(oldHandlerSource);
-                    AddCommandHandlerIfNotExists(newHandlerSource);
+                    await RemoveCommandHandlerAsync(oldHandlerSource);
+                    await AddCommandHandlerIfNotExistsAsync(newHandlerSource);
                 }
             }
         }
@@ -201,11 +202,11 @@ namespace DiscordBot.Core
         {
             foreach (var channel in await _discord.GetDMChannelsAsync())
             {
-                await AddCommandHandlerIfNotExists(channel).ConfigureAwait(true);
+                await AddCommandHandlerIfNotExistsAsync(channel).ConfigureAwait(true);
             }
         }
 
-        private Task HandleMessage(SocketMessage arg)
+        private async Task HandleMessageAsync(SocketMessage arg)
         {
             if (arg is SocketUserMessage userMessage)
             {
@@ -218,32 +219,9 @@ namespace DiscordBot.Core
                 }
                 else
                 {
-                    RaiseLog(new LogMessage(LogSeverity.Warning, this.GetType().Name, $"Missing command handler for {id}"));
+                    await _log.RaiseAsync(new LogMessage(LogSeverity.Warning, this.GetType().Name, $"Missing command handler for {id}"));
                 }
             }
-            return Task.CompletedTask;
-        }
-        #endregion
-
-        #region Log
-        protected void RaiseLog(LogSeverity severity, string message, Exception exception = null)
-        {
-            RaiseLog(new LogMessage(severity, GetType().Name, message, exception));
-        }
-
-        protected void RaiseLog(LogMessage message)
-        {
-            Log?.Invoke(message);
-        }
-
-        protected async Task RaiseLogAsync(LogMessage message)
-        {
-            await Log?.Invoke(message);
-        }
-
-        protected async Task RaiseLogAsync(Discord.LogMessage message)
-        {
-            await Log?.Invoke(new LogMessage(message));
         }
         #endregion
 
@@ -270,7 +248,7 @@ namespace DiscordBot.Core
         {
             foreach (var packet in _packets)
             {
-                packet.Log += RaiseLogAsync;
+                packet.Log += _log.RaiseAsync;
                 packet.InitPacket(Config, _discord, this);
             }
         }
@@ -286,21 +264,21 @@ namespace DiscordBot.Core
 
         private void SubscribeCommandHandlerOnDiscordEvents()
         {
-            _discord.GuildAvailable += AddCommandHandlerIfNotExists;
-            _discord.JoinedGuild += AddCommandHandlerIfNotExists;
-            _discord.GuildUnavailable += RemoveCommandHandler;                       
-            _discord.GuildUpdated += UpdateCommandHandlerConfig;
+            _discord.GuildAvailable += AddCommandHandlerIfNotExistsAsync;
+            _discord.JoinedGuild += AddCommandHandlerIfNotExistsAsync;
+            _discord.GuildUnavailable += RemoveCommandHandlerAsync;                       
+            _discord.GuildUpdated += UpdateCommandHandlerConfigAsync;
 
-            _discord.ChannelCreated += AddCommandHandlerIfNotExists;
-            _discord.ChannelUpdated += UpdateCommandHandlerConfig;                     
-            _discord.ChannelDestroyed += RemoveCommandHandler;
+            _discord.ChannelCreated += AddCommandHandlerIfNotExistsAsync;
+            _discord.ChannelUpdated += UpdateCommandHandlerConfigAsync;                     
+            _discord.ChannelDestroyed += RemoveCommandHandlerAsync;
 
             _discord.Ready += AddDMCommandHandlersAsync;
 
-            _discord.MessageReceived += HandleMessage;
+            _discord.MessageReceived += HandleMessageAsync;
         }
 
-        private void UpdateCommandHandlerIfExists(IEntity<ulong> newHandlerSource)
+        private async Task UpdateCommandHandlerIfExistsAsync(IEntity<ulong> newHandlerSource)
         {
             switch (newHandlerSource)
             {
@@ -311,7 +289,7 @@ namespace DiscordBot.Core
                     UpdateCommandHandlerIfExist(new CommandConfig(CommandSource.Guild, newChannel.Recipient.Username, newChannel.Recipient.Id, _commandHandlers[newChannel.Recipient.Id].Config.Prefix, _commandHandlers[newChannel.Recipient.Id].Config.Modules));
                     break;
                 default:
-                    RaiseLog(LogSeverity.Warning, $"Can't update command handler with unknown source");
+                    await _log.RaiseAsync(LogSeverity.Warning, $"Can't update command handler with unknown source");
                     break;
             }
         }
@@ -348,8 +326,8 @@ namespace DiscordBot.Core
             {
                 if (service.ImplementationInstance is ServiceBase)
                 {
-                    ((ServiceBase)service.ImplementationInstance).Log -= RaiseLogAsync;
-                    ((ServiceBase)service.ImplementationInstance).Log += RaiseLogAsync;
+                    ((ServiceBase)service.ImplementationInstance).Log -= _log.RaiseAsync;
+                    ((ServiceBase)service.ImplementationInstance).Log += _log.RaiseAsync;
                 }
                 _services.Insert(_services.Count, service);
             }
@@ -375,7 +353,7 @@ namespace DiscordBot.Core
             }
         }
 
-        private CommandConfig GetCommandConfigFromProvider(CommandSource source, ulong id)
+        private async Task<CommandConfig> GetCommandConfigFromProviderAsync(CommandSource source, ulong id)
         {
             CommandConfigBuilder res = null;
             foreach (var config in ConfigsProvider.CommandConfigs.Values)
@@ -396,7 +374,7 @@ namespace DiscordBot.Core
                         res = Config.DefaultGuildCommandConfig;
                         break;
                     default:
-                        RaiseLog(LogSeverity.Warning, $"Can't get command config with unknown source");
+                        await _log.RaiseAsync(LogSeverity.Warning, $"Can't get command config with unknown source");
                         break;
 
                 }
@@ -404,18 +382,18 @@ namespace DiscordBot.Core
             return res.Build();
         }
 
-        private void AddCommandHandler(CommandConfig config, ServiceCollection services, CommandService modules)
+        private async Task AddCommandHandlerAsync(CommandConfig config, ServiceCollection services, CommandService modules)
         {
             CommandHandler handler = new CommandHandler(_discord, services.BuildServiceProvider(), modules, config);
             AddCommandHandler(handler);
             SubscribeCommandConfigsProviderOnChanges(handler);
             ConfigsProvider?.AddCommandConfig(handler.Config);
-            RaiseLog(LogSeverity.Info, $"Command handler created for {handler.Config.Source.ToString().ToLower()} {handler.Config.Name}");
+            await _log.RaiseAsync(LogSeverity.Info, $"Command handler created for {handler.Config.Source.ToString().ToLower()} {handler.Config.Name}");
         }
 
         private void AddCommandHandler(CommandHandler handler)
         {
-            handler.Log += RaiseLogAsync;
+            handler.Log += _log.RaiseAsync;
             _commandHandlers.Add(handler.Config.Id, handler);
         }
     }

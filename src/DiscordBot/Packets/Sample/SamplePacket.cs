@@ -19,27 +19,25 @@ namespace DiscordBot.Packets.Sample
                                                             // так же и передается ConfigsProvider, пока Discord не будет рэди, комманд конфиги серверов, будут пустыми (точнее Counts = 0)
         }
 
-        private Task ShowCommandConfigs()
+        private async Task ShowCommandConfigsAsync()
         {
             string configs = "";
             foreach (var config in CommandConfigsProvider.CommandConfigs.Values)
             {
                 configs += config.Name + " ";
             }
-            RaiseLog(new LogMessage(LogSeverity.Critical, "Я ИЗ ЧЕЧНИ", $"Есть такие конфиги: {configs}"));
-            return Task.CompletedTask;
+            await Logger.RaiseAsync(new LogMessage(LogSeverity.Critical, "Я ИЗ ЧЕЧНИ", $"Есть такие конфиги: {configs}"));
         }
 
-        private Task Discord_Ready()
+        private async Task Discord_ReadyAsync()
         {
-            RaiseLog(new LogMessage(LogSeverity.Critical, "Я ИЗ ЧЕЧНИ", "ДАРОВА))"));
-            return Task.CompletedTask;
+            await Logger.RaiseAsync(new LogMessage(LogSeverity.Critical, "Я ИЗ ЧЕЧНИ", "ДАРОВА))"));
         }
 
         private void SubscribeOnDiscordEvents()
         {
-            Discord.Ready += Discord_Ready;
-            Discord.Ready += ShowCommandConfigs;
+            Discord.Ready += Discord_ReadyAsync;
+            Discord.Ready += ShowCommandConfigsAsync;
         }
     }
 }

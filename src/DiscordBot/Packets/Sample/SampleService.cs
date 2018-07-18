@@ -3,14 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DiscordBot.Packets.Sample
 {
     public class SampleService : ServiceBase
     {
-        public void ToLog(string messgage)
+        public async Task ToLogAsync(string messgage)
         {
-            RaiseLog(new LogMessage(LogSeverity.Critical, this.GetType().Name, $"THIS IS VERY IMPORTATN -> {messgage}"));
+            await Logger.RaiseAsync(new LogMessage(LogSeverity.Critical, this.GetType().Name, $"THIS IS VERY IMPORTATN -> {messgage}"));
         }
 
         public void WriteToFile(string message)
@@ -18,7 +19,7 @@ namespace DiscordBot.Packets.Sample
             File.WriteAllText("SampleFile.txt", message);
         }
 
-        public string GetFromFile()
+        public async Task<string> GetFromFileAsync()
         {
             string res;
             try
@@ -27,7 +28,7 @@ namespace DiscordBot.Packets.Sample
             }
             catch(Exception ex)
             {
-                RaiseLog(LogSeverity.Warning, ex.Message);
+                await Logger.RaiseAsync(LogSeverity.Warning, ex.Message);
                 return null;
             }
             return res;

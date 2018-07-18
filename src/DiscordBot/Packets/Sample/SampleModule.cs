@@ -22,7 +22,7 @@ namespace DiscordBot.Packets.Sample
         [Name("ToLog"), Command("ToLog")]
         public async Task ToLogAsync(params string[] message)
         {
-            _service.ToLog(String.Join(" ", message));
+            await _service.ToLogAsync(String.Join(" ", message));
             await this.Context.Channel.SendMessageAsync("Yes i did this :^)");
         }
 
@@ -36,10 +36,10 @@ namespace DiscordBot.Packets.Sample
         [Name("FromFile"), Command("FromFile")]
         public async Task FromFile()
         {
-            var res = _service.GetFromFile();
+            var res = _service.GetFromFileAsync();
             if (res != null)
             {
-                await this.Context.Channel.SendMessageAsync($"Look at that: {_service.GetFromFile()} prety nice ;^) ");
+                await this.Context.Channel.SendMessageAsync($"Look at that: {_service.GetFromFileAsync()} prety nice ;^) ");
             }
             else
             {

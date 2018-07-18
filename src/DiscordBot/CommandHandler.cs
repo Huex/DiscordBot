@@ -12,8 +12,10 @@ namespace DiscordBot.Core
 {
     public class CommandHandler : ILogEntity
     {
-        private readonly DiscordSocketClient _discord;
+        private readonly DiscordClient _discord;
         private CommandConfig _config;
+
+        protected LogRaiser Logger;
 
         public event Action<ulong, CommandConfig> ConfigUpdated;
         public event Func<LogMessage, Task> Log;
@@ -30,35 +32,29 @@ namespace DiscordBot.Core
             {
                 UpdateCommandsAsync(value).ConfigureAwait(true);
                 _config = RemoveUnavailableModules(value);
-                RaiseConfiUpdatedEvent();
+                RaiseConfiUpdatedEventAsync().ConfigureAwait(true);
             }
         }
 
-        #region Log
-        protected void RaiseLog(LogSeverity severity, string message, Exception exception = null)
+        public CommandHandler(DiscordClient discord, IServiceProvider services, CommandService commands, CommandConfig config)
         {
-            RaiseLog(new LogMessage(severity, GetType().Name, message, exception));
+            Logger = new LogRaiser(async (msg) => await Log?.Invoke(msg));
+            _discord = discord ?? throw new ArgumentNullException(nameof(discord));
+            Commands = commands ?? throw new ArgumentNullException(nameof(commands));
+            Services = services ?? throw new ArgumentNullException(nameof(services));
+            Commands.Log += Logger.RaiseAsync;
+
+            Config = config;
         }
 
-        protected void RaiseLog(LogMessage message)
+        public async Task HandleMessage(SocketMessage message)
         {
-            Log?.Invoke(message);
+            await HandleCommand(message as SocketUserMessage).ConfigureAwait(true);
         }
 
-        protected async Task RaiseLogAsync(LogMessage message)
+        private async Task RaiseConfiUpdatedEventAsync()
         {
-            await Log?.Invoke(message);
-        }
-
-        protected async Task RaiseLogAsync(Discord.LogMessage message)
-        {
-            await Log?.Invoke(new LogMessage(message));
-        }
-        #endregion
-
-        private void RaiseConfiUpdatedEvent()
-        {
-            RaiseLog(LogSeverity.Debug, $"Command config updated {Config.Source.ToString().ToLower()} {Config.Name}");
+            await Logger.RaiseAsync(LogSeverity.Debug, $"Command config updated {Config.Source.ToString().ToLower()} {Config.Name}");
             ConfigUpdated?.Invoke(_config.Id, _config);
         }
 
@@ -89,21 +85,6 @@ namespace DiscordBot.Core
             var attributes = new List<CustomAttributeData>(module.GetCustomAttributesData());
             var needed = attributes?.Find(p => p.AttributeType == typeof(NameAttribute));
             return (string)needed?.ConstructorArguments[0].Value;
-        }
-
-        public CommandHandler(DiscordSocketClient discord, IServiceProvider services, CommandService commands, CommandConfig config)
-        {
-            _discord = discord ?? throw new ArgumentNullException(nameof(discord));
-            Commands = commands ?? throw new ArgumentNullException(nameof(commands));
-            Services = services ?? throw new ArgumentNullException(nameof(services));
-            Commands.Log += RaiseLogAsync;
-
-            Config = config;
-        }
-
-        public async Task HandleMessage(SocketMessage message)
-        {
-            await HandleCommand(message as SocketUserMessage).ConfigureAwait(true);
         }
 
         private async Task HandleCommand(SocketUserMessage msg)

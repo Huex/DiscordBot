@@ -7,8 +7,16 @@ namespace DiscordBot.Core
 {
     public abstract class PacketBase : ILogEntity
     {
+        protected LogRaiser Logger;
+
+        public PacketBase()
+        {
+            Logger = new LogRaiser(async (msg) => await Log?.Invoke(msg));
+        }
+
         public IPacketDiscordClient Discord { get; private set; }
         public ICommandConfigsModOnlyProvider CommandConfigsProvider { get; private set; }
+        public ICommandServicesReadOnlyProvider CommandServicesProvider { get; private set; }
         public BotConfig BotConfig { get; private set; }
         public bool IsInitialized { get; private set; } = false;
 
@@ -27,27 +35,5 @@ namespace DiscordBot.Core
             IsInitialized = true;
             Initialized?.Invoke();
         }
-
-        #region Log
-        protected void RaiseLog(LogSeverity severity, string message, Exception exception = null)
-        {
-            RaiseLog(new LogMessage(severity, GetType().Name, message, exception));
-        }
-
-        protected void RaiseLog(LogMessage message)
-        {
-            Log?.Invoke(message);
-        }
-
-        protected async Task RaiseLogAsync(LogMessage message)
-        {
-            await Log?.Invoke(message);
-        }
-
-        protected async Task RaiseLogAsync(Discord.LogMessage message)
-        {
-            await Log?.Invoke(new LogMessage(message));
-        }
-        #endregion
     }
 }
