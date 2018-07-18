@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,6 +36,13 @@ namespace DiscordBot.Packets.Settings
         public async Task PrefixAsync()
         {
             await ReplyAsync($"{Context.User.Mention} current prefix: `{_settings.GetPrefix(CommandHandlerId)}`");
+        }
+
+        [Name("Modules"), Command("modules"), Alias("mod")]
+        [Summary("Displays the active modules on the server")]
+        public async Task GetModulesAsync()
+        {
+            await ReplyAsync($"{Context.User.Mention} active modules:\n`{String.Join("\n", _settings.GetModules(CommandHandlerId).ToArray())}`");
         }
 
         [Name("Ping"), Command("ping"), Alias("p")]

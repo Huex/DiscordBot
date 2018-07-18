@@ -17,5 +17,10 @@ namespace DiscordBot.Packets.Settings
         {
             return CommandProvider.CommandConfigs[id].Prefix;
         }
+
+        internal List<string> GetModules(ulong id)
+        {
+            return new List<string>(CommandProvider.CommandConfigs[id].Modules);
+        }
     }
 }
