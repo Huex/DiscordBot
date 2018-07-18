@@ -11,7 +11,7 @@ namespace DiscordBot.Core
 
         public PacketBase()
         {
-            Logger = new LogRaiser(async (msg) => await Log?.Invoke(msg));
+            Logger = new LogRaiser(GetType().Name, async (msg) => await Log?.Invoke(msg));
         }
 
         public IPacketDiscordClient Discord { get; private set; }

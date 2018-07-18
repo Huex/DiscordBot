@@ -86,7 +86,7 @@ namespace DiscordBot.Core
 
         public DiscordBot(BotConfig config, ICollection<PacketBase> packets)
         {
-            _log = new LogRaiser(async (msg) => await Log?.Invoke(msg));
+            _log = new LogRaiser(GetType().Name, async (msg) => await Log?.Invoke(msg));
 
             if (packets == null)
             {

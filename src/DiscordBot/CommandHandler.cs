@@ -38,7 +38,7 @@ namespace DiscordBot.Core
 
         public CommandHandler(DiscordClient discord, IServiceProvider services, CommandService commands, CommandConfig config)
         {
-            Logger = new LogRaiser(async (msg) => await Log?.Invoke(msg));
+            Logger = new LogRaiser(GetType().Name, async (msg) => await Log?.Invoke(msg));
             _discord = discord ?? throw new ArgumentNullException(nameof(discord));
             Commands = commands ?? throw new ArgumentNullException(nameof(commands));
             Services = services ?? throw new ArgumentNullException(nameof(services));

@@ -7,31 +7,33 @@ namespace DiscordBot
 {
     public class LogRaiser
     {
+        private readonly string _source;
         private readonly Func<LogMessage, Task> _logMethod;
 
-        public LogRaiser(Func<LogMessage, Task> logMethod)
+        public LogRaiser(string source, Func<LogMessage, Task> logMethod)
         {
+            _source = source;
             _logMethod = logMethod;
         }
 
         public void Raise(LogSeverity severity, string message, Exception exception)
         {
-            Raise(new LogMessage(severity, GetType().Name, message, exception));
+            Raise(new LogMessage(severity, _source, message, exception));
         }
 
         public async Task RaiseAsync(LogSeverity severity, string message)
         {
-            await RaiseAsync(new LogMessage(severity, GetType().Name, message, null));
+            await RaiseAsync(new LogMessage(severity, _source, message, null));
         }
 
         public async Task RaiseAsync(LogSeverity severity, string message, Exception exception)
         {
-            await RaiseAsync(new LogMessage(severity, GetType().Name, message, exception));
+            await RaiseAsync(new LogMessage(severity, _source, message, exception));
         }
 
         public void Raise(LogSeverity severity, string message)
         {
-            Raise(new LogMessage(severity, GetType().Name, message, null));
+            Raise(new LogMessage(severity, _source, message, null));
         }
 
         public void Raise(LogMessage message)

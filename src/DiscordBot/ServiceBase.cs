@@ -10,7 +10,7 @@ namespace DiscordBot.Core
 
         public ServiceBase()
         {
-            Logger = new LogRaiser(async (msg) => await Log?.Invoke(msg));
+            Logger = new LogRaiser(GetType().Name, async (msg) => await Log?.Invoke(msg));
         }
     }
 }
