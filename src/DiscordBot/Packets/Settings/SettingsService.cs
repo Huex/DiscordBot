@@ -6,21 +6,23 @@ namespace DiscordBot.Packets.Settings
 {
     public class SettingsService
     {
-        public ICommandConfigsModOnlyProvider CommandProvider { get; set; }
+        public ICommandConfigsModOnlyProvider CommandConfigsProvider { get; set; }
+
+        public ICommandServicesReadOnlyProvider CommandServicesProvider { get; set; }
 
         internal void SetPrefix(ulong id, string prefix)
         {
-            CommandProvider.UpdateCommandConfig(id, prefix, CommandProvider.CommandConfigs[id].Modules);
+            CommandConfigsProvider.UpdateCommandConfig(id, prefix, CommandConfigsProvider.CommandConfigs[id].Modules);
         }
 
         internal string GetPrefix(ulong id)
         {
-            return CommandProvider.CommandConfigs[id].Prefix;
+            return CommandConfigsProvider.CommandConfigs[id].Prefix;
         }
 
         internal List<string> GetModules(ulong id)
         {
-            return new List<string>(CommandProvider.CommandConfigs[id].Modules);
+            return new List<string>(CommandConfigsProvider.CommandConfigs[id].Modules);
         }
     }
 }

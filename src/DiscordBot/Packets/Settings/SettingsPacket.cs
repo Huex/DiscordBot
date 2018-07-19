@@ -13,7 +13,8 @@ namespace DiscordBot.Packets.Settings
             GuildModules.Add(typeof(SettingsModule));
             Initialized += () =>
             {
-                service.CommandProvider = CommandConfigsProvider;
+                service.CommandConfigsProvider = CommandConfigsProvider;
+                service.CommandServicesProvider = CommandServicesProvider;
             };
         }
     }

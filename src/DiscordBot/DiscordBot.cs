@@ -64,11 +64,11 @@ namespace DiscordBot.Core
         #endregion
 
         #region ICommandServiceReadOnlyProvider
-        IReadOnlyDictionary<ulong, CommandService> ICommandServicesReadOnlyProvider.CommandServices
+        IReadOnlyDictionary<ulong, IPacketCommandService> ICommandServicesReadOnlyProvider.CommandServices
         {
             get
             {
-                var commands = new Dictionary<ulong, CommandService>();
+                var commands = new Dictionary<ulong, IPacketCommandService>();
                 foreach (var handler in _commandHandlers.Values)
                 {
                     commands.Add(handler.Config.Id, handler.Commands);

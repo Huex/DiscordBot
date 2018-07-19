@@ -27,10 +27,11 @@ namespace DiscordBot.Core
         public Collection<Type> GuildModules { get; set; } = new Collection<Type>();
         public Collection<Type> DMModules { get; set; } = new Collection<Type>();
 
-        internal void InitPacket(BotConfig config, DiscordClient discord, ICommandConfigsModOnlyProvider commanderConfigsProvider)
+        internal void InitPacket(BotConfig config, DiscordClient discord, DiscordBot bot)
         {
             Discord = discord;
-            CommandConfigsProvider = commanderConfigsProvider;
+            CommandConfigsProvider = bot;
+            CommandServicesProvider = bot;
             BotConfig = config;
             IsInitialized = true;
             Initialized?.Invoke();

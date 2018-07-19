@@ -7,6 +7,6 @@ namespace DiscordBot
 {
     public interface ICommandServicesReadOnlyProvider
     {
-        IReadOnlyDictionary<ulong, CommandService> CommandServices { get; }
+        IReadOnlyDictionary<ulong, IPacketCommandService> CommandServices { get; }
     }
 }

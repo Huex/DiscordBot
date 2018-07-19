@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DiscordBot
 {
-    interface IPacketCommandService
+    public interface IPacketCommandService
     {
         IEnumerable<CommandInfo> Commands { get; }
         IEnumerable<ModuleInfo> Modules { get; }
