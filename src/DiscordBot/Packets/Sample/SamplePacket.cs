@@ -26,12 +26,12 @@ namespace DiscordBot.Packets.Sample
             {
                 configs += config.Name + " ";
             }
-            await Logger.RaiseAsync(new LogMessage(LogSeverity.Critical, "Я ИЗ ЧЕЧНИ", $"Есть такие конфиги: {configs}"));
+            await Logger.RaiseAsync(new LogMessage(LogSeverity.Critical, "тип лог", $"Есть такие конфиги: {configs}"));
         }
 
         private async Task Discord_ReadyAsync()
         {
-            await Logger.RaiseAsync(new LogMessage(LogSeverity.Critical, "Я ИЗ ЧЕЧНИ", "ДАРОВА))"));
+            await Logger.RaiseAsync(new LogMessage(LogSeverity.Critical, "тип лог", "ДАРОВА))"));
         }
 
         private void SubscribeOnDiscordEvents()

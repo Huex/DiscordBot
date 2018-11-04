@@ -1,11 +1,7 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace DiscordBot.Core
@@ -32,16 +28,16 @@ namespace DiscordBot.Core
             {
                 UpdateCommandsAsync(value).ConfigureAwait(true);
                 _config = RemoveUnavailableModules(value);
-                RaiseConfiUpdatedEventAsync().ConfigureAwait(true);
+                RaiseConfigUpdatedEventAsync().ConfigureAwait(true);
             }
         }
 
         public CommandHandler(DiscordClient discord, IServiceProvider services, CommandService commands, CommandConfig config)
-        {
-            Logger = new LogRaiser(GetType().Name, async (msg) => await Log?.Invoke(msg));
+        {       
             _discord = discord ?? throw new ArgumentNullException(nameof(discord));
             Commands = commands ?? throw new ArgumentNullException(nameof(commands));
             Services = services ?? throw new ArgumentNullException(nameof(services));
+            Logger = new LogRaiser(GetType().Name, async (msg) => await Log?.Invoke(msg));
             Commands.Log += Logger.RaiseAsync;
 
             Config = config;
@@ -52,9 +48,11 @@ namespace DiscordBot.Core
             await HandleCommand(message as SocketUserMessage).ConfigureAwait(true);
         }
 
-        private async Task RaiseConfiUpdatedEventAsync()
+        private async Task RaiseConfigUpdatedEventAsync()
         {
-            await Logger.RaiseAsync(LogSeverity.Debug, $"Command config updated {Config.Source.ToString().ToLower()} {Config.Name}");
+            await Logger.RaiseAsync(LogSeverity.Debug, 
+                $"Command config updated {Config.Source.ToString().ToLower()} {Config.Name}");
+
             ConfigUpdated?.Invoke(_config.Id, _config);
         }
 
@@ -85,7 +83,8 @@ namespace DiscordBot.Core
             if (msg != null)
             {
                 int prefixInt = Config.Prefix.Length - 1;
-                if (msg.HasMentionPrefix(_discord.CurrentUser, ref prefixInt) || msg.HasStringPrefix(Config.Prefix, ref prefixInt))
+                if (msg.HasMentionPrefix(_discord.CurrentUser, ref prefixInt) 
+                    || msg.HasStringPrefix(Config.Prefix, ref prefixInt))
                 {
                     await ProcessCommandAsync(prefixInt, msg).ConfigureAwait(true);
                 }
@@ -99,16 +98,18 @@ namespace DiscordBot.Core
             var result = await Commands.ExecuteAsync(context, prefixInt, Services);
             if (!result.IsSuccess)
             {
-                await message.Channel.SendMessageAsync(result.ErrorReason);
-                await Task.Delay(500).ConfigureAwait(true);
-                await message.AddReactionAsync(new Discord.Emoji("⁉"));
+                await message.Channel.SendMessageAsync($"Message:`{message.Content}`\n{result.ErrorReason}");
+            }
+        }
 
-            }
-            else
-            {
-                await Task.Delay(500).ConfigureAwait(true);
-                await message.AddReactionAsync(new Discord.Emoji("✅"));
-            }
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
     }
 }
